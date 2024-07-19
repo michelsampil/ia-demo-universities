@@ -24,7 +24,7 @@ app.include_router(score.router, prefix="/scores", tags=["scores"])
 app.include_router(question.router, prefix="/questions", tags=["questions"])
 
 # Initialize SocketManager with the FastAPI app instance
-socket_manager.init_app(app)
+# socket_manager.init_app(app)
 
 if __name__ == "__main__":
     import uvicorn
