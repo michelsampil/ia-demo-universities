@@ -1,4 +1,3 @@
-// src/components/Game.tsx
 import React, { useState, useEffect, useContext } from "react";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
