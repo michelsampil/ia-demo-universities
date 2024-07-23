@@ -19,12 +19,22 @@ const Game: React.FC = () => {
   const [time, setTime] = useState<number>(30);
 
   useEffect(() => {
-    const socket = io("http://localhost:8000");
+    // Connect to WebSocket
+    const socket = io("http://localhost:8000/ws/game");
+
+    socket.on("connect", () => {
+      console.log("Connected to WebSocket");
+    });
 
     socket.on("time", (data: number) => {
       setTime(data);
     });
 
+    socket.on("disconnect", () => {
+      console.log("Disconnected from WebSocket");
+    });
+
+    // Cleanup on component unmount
     return () => {
       socket.disconnect();
     };
@@ -33,7 +43,7 @@ const Game: React.FC = () => {
   useEffect(() => {
     const fetchQuestion = async () => {
       try {
-        const response = await api.get("/question");
+        const response = await api.get("/questions");
         setQuestion(response.data);
       } catch (error) {
         console.error("Failed to fetch question", error);
@@ -48,7 +58,7 @@ const Game: React.FC = () => {
     if (answer === question?.correctAnswer) {
       // Move to next question or finish game
     } else {
-      await api.post("/score", {
+      await api.post("/scores", {
         username: user.username,
         score: 0, // You should calculate the actual score
       });
