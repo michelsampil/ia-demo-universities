@@ -7,6 +7,7 @@ from app.db.database import engine, Base
 from app.api.api_v1.endpoints import auth, score, question
 from app.socketio.handlers import init_socket_manager
 
+Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()

@@ -1,15 +1,16 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 class UserBase(BaseModel):
-    username: str
+    full_name: str
+    email: EmailStr  # Ensures email validation
 
 class UserCreate(UserBase):
-    password: str
+    # Removed password field as it's no longer needed
+    pass
 
 class UserOut(UserBase):
     id: int
     class Config:
-        orm_mode = True
+        orm_mode = True  # Allows compatibility with ORM models
 
-class UserInDB(UserBase):
-    hashed_password: str
+# Removed UserInDB schema as hashed_password is no longer used
