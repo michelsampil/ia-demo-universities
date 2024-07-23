@@ -6,6 +6,7 @@ import io from "socket.io-client";
 import api from "../services/api";
 
 interface Question {
+  id: number;
   image: string;
   answers: string[];
   correctAnswer: string;
@@ -17,53 +18,59 @@ const Game: React.FC = () => {
   const [question, setQuestion] = useState<Question | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [time, setTime] = useState<number>(30);
+  const [socket, setSocket] = useState<any>(null);
 
   useEffect(() => {
-    // Connect to WebSocket
-    const socket = io("http://localhost:8000/ws/game");
+    const socketConnection = io("http://localhost:8000/ws/socket.io/");
 
-    socket.on("connect", () => {
+    socketConnection.on("connect", () => {
       console.log("Connected to WebSocket");
+      socketConnection.emit("start_game", { username: user.username });
     });
 
-    socket.on("time", (data: number) => {
+    socketConnection.on("question", (data: Question) => {
+      setQuestion(data);
+    });
+
+    socketConnection.on("time", (data: number) => {
       setTime(data);
     });
 
-    socket.on("disconnect", () => {
-      console.log("Disconnected from WebSocket");
+    socketConnection.on("time_up", () => {
+      handleTimeUp();
     });
 
-    // Cleanup on component unmount
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
-
-  useEffect(() => {
-    const fetchQuestion = async () => {
-      try {
-        const response = await api.get("/questions");
-        setQuestion(response.data);
-      } catch (error) {
-        console.error("Failed to fetch question", error);
+    socketConnection.on(
+      "answer_result",
+      (data: { score: number; correct: boolean }) => {
+        if (!data.correct) {
+          navigate("/ranking");
+        }
       }
-    };
+    );
 
-    fetchQuestion();
-  }, []);
+    setSocket(socketConnection);
+
+    return () => {
+      socketConnection.disconnect();
+    };
+  }, [user.username, navigate]);
 
   const handleAnswer = async (answer: string) => {
     setSelectedAnswer(answer);
-    if (answer === question?.correctAnswer) {
-      // Move to next question or finish game
-    } else {
-      await api.post("/scores", {
-        username: user.username,
-        score: 0, // You should calculate the actual score
-      });
-      navigate("/ranking");
-    }
+    socket.emit("submit_answer", {
+      username: user.username,
+      question_id: question?.id,
+      answer: answer,
+    });
+  };
+
+  const handleTimeUp = async () => {
+    socket.emit("submit_answer", {
+      username: user.username,
+      question_id: question?.id,
+      answer: selectedAnswer,
+    });
   };
 
   return (
