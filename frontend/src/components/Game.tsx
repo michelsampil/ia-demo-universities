@@ -2,7 +2,6 @@ import React, { useState, useEffect, useContext } from "react";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import io from "socket.io-client";
 import api from "../services/api";
 
 interface Question {
@@ -18,10 +17,11 @@ const Game: React.FC = () => {
   const [question, setQuestion] = useState<Question | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [time, setTime] = useState<number>(30);
-  const [socket, setSocket] = useState<any>(null);
+  const [socket, setSocket] = useState<WebSocket | null>(null);
 
   useEffect(() => {
     const ws = new WebSocket("ws://localhost:8000/ws");
+    setSocket(ws);
 
     ws.onopen = () => {
       console.log("Connected to WebSocket server");
@@ -31,42 +31,62 @@ const Game: React.FC = () => {
     };
 
     ws.onmessage = (event) => {
-      console.log("Message from server:", event.data);
+      const data = JSON.parse(event.data);
+      console.log("Message from server:", data);
+
+      if (data.event === "question") {
+        setQuestion(data.question);
+      } else if (data.event === "time") {
+        console.log("should update", data.setTime);
+        setTime(data.time);
+      } else if (data.event === "time_up") {
+        setTime(0);
+        handleTimeUp();
+      } else if (data.event === "answer_result") {
+        // Handle answer result if needed
+      }
     };
 
     ws.onclose = () => {
       console.log("WebSocket connection closed");
     };
 
-    // return () => {
-    //   ws.close();
-    // };
+    return () => {
+      ws.close();
+    };
   }, []);
 
   const handleAnswer = async (answer: string) => {
     setSelectedAnswer(answer);
-    socket.emit("submit_answer", {
-      username: user.username,
-      question_id: question?.id,
-      answer: answer,
-    });
+    socket?.send(
+      JSON.stringify({
+        event: "submit_answer",
+        username: user.username,
+        question_id: question?.id,
+        answer: answer,
+      })
+    );
   };
 
   const handleTimeUp = async () => {
-    socket.emit("submit_answer", {
-      username: user.username,
-      question_id: question?.id,
-      answer: selectedAnswer,
-    });
+    socket?.send(
+      JSON.stringify({
+        event: "submit_answer",
+        username: user.username,
+        question_id: question?.id,
+        answer: selectedAnswer,
+      })
+    );
   };
 
   return (
     <Container>
+      <h1>Time: {time}</h1>
       {question && (
         <>
-          <Image src={question.image} alt="question" />
+          <Image src={question?.image} alt="question" />
           <Answers>
-            {question.answers.map((answer, index) => (
+            {question?.answers?.map((answer, index) => (
               <Button
                 key={index}
                 onClick={() => handleAnswer(answer)}

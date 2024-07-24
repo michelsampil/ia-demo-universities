@@ -32,14 +32,13 @@ async def handle_start_game(websocket: WebSocket, data: dict, db: Session):
         return
 
     json_compatible_item_data = jsonable_encoder(question)
+    await websocket.send_text(json.dumps({"event": "question", "question": json_compatible_item_data}))
 
-    await websocket.send_text(json.dumps({"question": json_compatible_item_data}))
-    
     for i in range(30, 0, -1):
-        await websocket.send_text(json.dumps({"time": i}))
+        await websocket.send_text(json.dumps({"event": "time", "time": i}))
         await asyncio.sleep(1)
     
-    await websocket.send_text(json.dumps({"time_up": True}))
+    await websocket.send_text(json.dumps({"event": "time_up"}))
 
 async def handle_submit_answer(websocket: WebSocket, data: dict, db: Session):
     user = db.query(UserBase).filter(UserBase.full_name == data["username"]).first()
@@ -49,13 +48,11 @@ async def handle_submit_answer(websocket: WebSocket, data: dict, db: Session):
         await websocket.send_text(json.dumps({"error": "Invalid data"}))
         return
 
-    if data["answer"] == question.correct_answer:
-        score = 50
-    else:
-        score = 0
+    is_correct = data["answer"] == question.correct_answer
+    score = 50 if is_correct else 0
 
     # Update the user's score in the database (implement this logic as needed)
     # user.score += score
     # db.commit()
 
-    await websocket.send_text(json.dumps({"score": score, "correct": data["answer"] == question.correct_answer}))
+    await websocket.send_text(json.dumps({"event": "answer_result", "score": score, "correct": is_correct}))
