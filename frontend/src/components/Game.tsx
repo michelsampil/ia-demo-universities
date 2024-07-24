@@ -2,13 +2,12 @@ import React, { useState, useEffect, useContext } from "react";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import api from "../services/api";
 
 interface Question {
   id: number;
+  options: string[];
+  category: string;
   image: string;
-  answers: string[];
-  correctAnswer: string;
 }
 
 const Game: React.FC = () => {
@@ -37,10 +36,8 @@ const Game: React.FC = () => {
       if (data.event === "question") {
         setQuestion(data.question);
       } else if (data.event === "time") {
-        console.log("should update", data.setTime);
         setTime(data.time);
       } else if (data.event === "time_up") {
-        setTime(0);
         handleTimeUp();
       } else if (data.event === "answer_result") {
         // Handle answer result if needed
@@ -84,15 +81,18 @@ const Game: React.FC = () => {
       <h1>Time: {time}</h1>
       {question && (
         <>
-          <Image src={question?.image} alt="question" />
+          <Image
+            src={`http://localhost:8000/assets/images/${question.image}.png`}
+            alt="question"
+          />
           <Answers>
-            {question?.answers?.map((answer, index) => (
+            {question.options.map((option, index) => (
               <Button
                 key={index}
-                onClick={() => handleAnswer(answer)}
+                onClick={() => handleAnswer(option)}
                 disabled={!!selectedAnswer}
               >
-                {answer}
+                {option}
               </Button>
             ))}
           </Answers>

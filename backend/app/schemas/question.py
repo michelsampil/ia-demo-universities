@@ -1,9 +1,11 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import List
 
 class QuestionBase(BaseModel):
-    text: str
-    answer: str
+    options: List[str]
+    category: str
+    image: str
+    correct_answer: str
 
 class QuestionCreate(QuestionBase):
     pass

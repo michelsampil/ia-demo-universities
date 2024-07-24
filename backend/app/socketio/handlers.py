@@ -31,7 +31,14 @@ async def handle_start_game(websocket: WebSocket, data: dict, db: Session):
         await websocket.send_text(json.dumps({"error": "No question found"}))
         return
 
-    json_compatible_item_data = jsonable_encoder(question)
+    question_data = {
+        "id": question.id,
+        "options": question.options,
+        "category": question.category,
+        "image": question.image
+    }
+    
+    json_compatible_item_data = jsonable_encoder(question_data)
     await websocket.send_text(json.dumps({"event": "question", "question": json_compatible_item_data}))
 
     for i in range(30, 0, -1):
@@ -50,9 +57,5 @@ async def handle_submit_answer(websocket: WebSocket, data: dict, db: Session):
 
     is_correct = data["answer"] == question.correct_answer
     score = 50 if is_correct else 0
-
-    # Update the user's score in the database (implement this logic as needed)
-    # user.score += score
-    # db.commit()
 
     await websocket.send_text(json.dumps({"event": "answer_result", "score": score, "correct": is_correct}))
