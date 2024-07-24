@@ -21,40 +21,27 @@ const Game: React.FC = () => {
   const [socket, setSocket] = useState<any>(null);
 
   useEffect(() => {
-    const socketConnection = io("http://localhost:8000/ws/socket.io/");
+    const ws = new WebSocket("ws://localhost:8000/ws");
 
-    socketConnection.on("connect", () => {
-      console.log("Connected to WebSocket");
-      socketConnection.emit("start_game", { username: user.username });
-    });
-
-    socketConnection.on("question", (data: Question) => {
-      setQuestion(data);
-    });
-
-    socketConnection.on("time", (data: number) => {
-      setTime(data);
-    });
-
-    socketConnection.on("time_up", () => {
-      handleTimeUp();
-    });
-
-    socketConnection.on(
-      "answer_result",
-      (data: { score: number; correct: boolean }) => {
-        if (!data.correct) {
-          navigate("/ranking");
-        }
-      }
-    );
-
-    setSocket(socketConnection);
-
-    return () => {
-      socketConnection.disconnect();
+    ws.onopen = () => {
+      console.log("Connected to WebSocket server");
+      ws.send(
+        JSON.stringify({ event: "start_game", message: "Hello from React!" })
+      );
     };
-  }, [user.username, navigate]);
+
+    ws.onmessage = (event) => {
+      console.log("Message from server:", event.data);
+    };
+
+    ws.onclose = () => {
+      console.log("WebSocket connection closed");
+    };
+
+    // return () => {
+    //   ws.close();
+    // };
+  }, []);
 
   const handleAnswer = async (answer: string) => {
     setSelectedAnswer(answer);
