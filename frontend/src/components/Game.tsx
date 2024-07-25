@@ -107,7 +107,7 @@ const Game: React.FC = () => {
           <RightPanel>
             <UserCard>
               <Avatar
-                src="data:image/jpeg;base64,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"
+                src="https://avatars.githubusercontent.com/u/13066412?v=4"
                 alt="User Avatar"
               />
               <Info>
@@ -124,21 +124,15 @@ const Game: React.FC = () => {
                 </OptionPanelTitle>
                 <Answers>
                   {question?.options?.map((answer, index) => (
-                    <Button
+                    <AnswerButton
                       key={index}
                       onClick={() => handleAnswer(answer)}
                       disabled={!!selectedAnswer}
                     >
                       {answer}
-                    </Button>
+                    </AnswerButton>
                   ))}
                 </Answers>
-                <ConfirmButton
-                  onClick={() => handleAnswer(selectedAnswer || "")}
-                  disabled={!selectedAnswer}
-                >
-                  Confirm
-                </ConfirmButton>
               </OptionPanel>
             </UserCard>
           </RightPanel>
@@ -189,6 +183,9 @@ const OptionPanel = styled.div`
   flex-direction: column;
   gap: 1rem;
   margin-bottom: 5rem;
+  justify-content: space-between;
+  align-items: space-between;
+  height: 60vh;
 `;
 
 const OptionPanelTitle = styled.h1``;
@@ -202,7 +199,7 @@ const QuestionCard = styled.div`
 
 const Image = styled.img`
   max-width: 100%;
-  height: auto;
+  height: 90vh;
   border-radius: 8px;
 `;
 
@@ -244,31 +241,37 @@ const Answers = styled.div`
 
 const AnswerButton = styled.button`
   padding: 1rem;
-  font-size: 1.2rem;
+  font-size: 1.5rem;
+  color: white;
   cursor: pointer;
   background-color: ${colors.lightTurquoise};
   border: none;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  &:disabled {
-    background-color: ${colors.coolGray};
-    cursor: not-allowed;
-  }
-`;
 
-const ConfirmButton = styled.button`
-  padding: 1rem;
-  font-size: 1.2rem;
   cursor: pointer;
-  background-color: ${colors.washedBlue};
+  background-color: ${colors.lightTurquoise}; // Button background
+  color: ${colors.blackGray}; // Button text color
   border: none;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  &:disabled {
-    background-color: ${colors.gray};
-    cursor: not-allowed;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    background-color: ${colors.neonTurquoise}; // Hover background color
+    box-shadow: 0 4px 12px ${colors.neonTurquoise}; // Hover shadow
+  }
+
+  // &:disabled {
+  //   background-color: ${colors.coolGray};
+  //   cursor: not-allowed;
+  // }
+
+  &::first-letter {
+    text-transform: capitalize;
   }
 `;
+
 const Modal = styled.div`
   display: flex;
   justify-content: center;
@@ -300,7 +303,7 @@ const GameOver = styled.h1`
   color: ${colors.neonTurquoise}; // Accent color
 `;
 
-const Button = styled.button`
+export const Button = styled.button`
   padding: 0.75rem 1.5rem;
   font-size: 1.1rem;
   cursor: pointer;

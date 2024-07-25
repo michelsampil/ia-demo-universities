@@ -3,6 +3,7 @@ import { AuthContext } from "../context/AuthContext";
 import api from "../services/api";
 import styled from "styled-components";
 import { colors } from "../styles/colors";
+import { Button } from "./Game";
 
 const Login: React.FC = () => {
   const [fullName, setFullName] = useState("");
@@ -68,7 +69,7 @@ const Form = styled.form`
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  background-color: ${colors.white};
+  background-color: ${colors.coolGray};
   padding: 2rem;
   border-radius: 8px;
   box-shadow: 0 4px 8px ${colors.gray};
@@ -78,13 +79,13 @@ const Form = styled.form`
 
 const Title = styled.h1`
   font-size: 2rem;
-  color: ${colors.coolGray};
+  color: ${colors.offWhite};
   margin: 0;
 `;
 
 const Subtitle = styled.p`
   font-size: 1rem;
-  color: ${colors.gray};
+  color: ${colors.offWhite};
   margin-bottom: 1rem;
 `;
 
@@ -98,21 +99,6 @@ const Input = styled.input`
 
   &:focus {
     border-color: ${colors.lightTurquoise};
-  }
-`;
-
-const Button = styled.button`
-  padding: 0.75rem;
-  font-size: 1rem;
-  cursor: pointer;
-  background-color: ${colors.lightTurquoise};
-  color: ${colors.white};
-  border: none;
-  border-radius: 4px;
-  transition: background-color 0.3s ease;
-
-  &:hover {
-    background-color: ${colors.neonTurquoise};
   }
 `;
 
