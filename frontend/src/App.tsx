@@ -14,7 +14,7 @@ const App: React.FC = () => {
     <Router>
       <AuthProvider>
         <GlobalStyle />
-        <Navbar />
+        {/* <Navbar /> */}
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<PrivateRoute />}>

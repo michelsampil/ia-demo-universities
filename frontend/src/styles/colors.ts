@@ -7,4 +7,9 @@ export const colors = {
   lightTurquoise: "#00EDED",
   neonTurquoise: "#A2F3F3",
   washedBlue: "#053057",
+  blackGray: "#252525",
+  neonRed: "#FF073A",
+  neonPink: "#FF66B2",
+  neonGreen: "#39FF14",
+  neonYellow: "#FFFF33",
 };
