@@ -1,3 +1,4 @@
+// src/components/Game.js
 import React, { useState, useEffect, useContext, useMemo } from "react";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
@@ -112,7 +113,7 @@ const Game: React.FC = () => {
               />
               <Info>
                 <h2>{user.username}</h2>
-                <span>Score: 100</span>
+                <ScoreText>Score: 100</ScoreText>
                 <TimeDisplay color={getTimeColor}>Time: {time}s</TimeDisplay>
                 <span>Category: {question.category}</span>
               </Info>
@@ -232,6 +233,11 @@ const Info = styled.div`
   }
 `;
 
+const ScoreText = styled.span`
+  font-family: "VIDEOPHREAK", sans-serif;
+  font-size: 1.5rem;
+`;
+
 const Answers = styled.div`
   display: flex;
   flex-direction: column;
@@ -261,11 +267,6 @@ const AnswerButton = styled.button`
     background-color: ${colors.neonTurquoise}; // Hover background color
     box-shadow: 0 4px 12px ${colors.neonTurquoise}; // Hover shadow
   }
-
-  // &:disabled {
-  //   background-color: ${colors.coolGray};
-  //   cursor: not-allowed;
-  // }
 
   &::first-letter {
     text-transform: capitalize;
