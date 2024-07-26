@@ -114,7 +114,7 @@ const Game: React.FC = () => {
               <Info>
                 <h2>{user.username}</h2>
                 <ScoreText>Score: 100</ScoreText>
-                <TimeDisplay color={getTimeColor}>Time: {time}s</TimeDisplay>
+                <TimeDisplay color={getTimeColor}>⏰ Time: {time}s</TimeDisplay>
                 <span>Category: {question.category}</span>
               </Info>
             </UserCard>
