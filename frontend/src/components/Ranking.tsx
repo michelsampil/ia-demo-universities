@@ -27,7 +27,7 @@ const Ranking: React.FC = () => {
   // Add sample data if no scores are available
   if (scores.length === 0) {
     const scores = [
-      { username: "Michel Sampil", score: 1200, date: "2024-07-25T12:00:00Z" },
+      { username: "Michel Sampil", score: 1200, date: "2024-07-26T12:00:00Z" },
       { username: "Alice", score: 1150, date: "2024-07-24T12:00:00Z" },
       { username: "Bob", score: 1100, date: "2024-07-23T12:00:00Z" },
       { username: "Charlie", score: 1050, date: "2024-07-22T12:00:00Z" },

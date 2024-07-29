@@ -5,7 +5,7 @@ import styled from "styled-components";
 import { colors } from "../styles/colors";
 import { Button } from "./Game";
 
-const Login: React.FC = () => {
+const SignUp: React.FC = () => {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [degreeProgram, setDegreeProgram] = useState("");
@@ -31,8 +31,17 @@ const Login: React.FC = () => {
   return (
     <Container>
       <Form onSubmit={handleSubmit}>
-        <Title>Job Fair Login</Title>
-        <Subtitle>🎉 Ready for a rematch? 😎💪 Let's play again! 🎮🔥</Subtitle>
+        <Title>Job Fair Registry</Title>
+        <Subtitle>
+          Please enter your details in order to start playing 🎮.
+        </Subtitle>
+        <Input
+          type="text"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          placeholder="Full Name"
+          required
+        />
         <Input
           type="email"
           value={email}
@@ -40,17 +49,31 @@ const Login: React.FC = () => {
           placeholder="Email"
           required
         />
+        <Input
+          type="text"
+          value={degreeProgram}
+          onChange={(e) => setDegreeProgram(e.target.value)}
+          placeholder="Degree Program"
+          required
+        />
+        <Input
+          type="text"
+          value={academicYear}
+          onChange={(e) => setAcademicYear(e.target.value)}
+          placeholder="Current Academic Year"
+          required
+        />
         <Button type="submit">Sign up</Button>
         <Footer>
-          <p>Don't have an account?</p>
-          <Link href="/signup">Sign up here</Link>
+          <p>Already have an account?</p>
+          <Link href="/login">Log in here</Link>
         </Footer>
       </Form>
     </Container>
   );
 };
 
-export default Login;
+export default SignUp;
 
 const Container = styled.div`
   display: flex;
