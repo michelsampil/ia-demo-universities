@@ -6,20 +6,14 @@ import { colors } from "../styles/colors";
 import { Button } from "./Game";
 
 const Login: React.FC = () => {
-  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [degreeProgram, setDegreeProgram] = useState("");
-  const [academicYear, setAcademicYear] = useState("");
   const { login } = useContext(AuthContext)!;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const response = await api.post("auth/login", {
-        full_name: fullName,
         email,
-        degree_program: degreeProgram,
-        academic_year: academicYear,
       });
 
       login(response.data.access_token);
