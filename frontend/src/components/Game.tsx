@@ -115,13 +115,13 @@ const Game: React.FC = () => {
                 <h2>{user.username}</h2>
                 <ScoreText>Score: 100</ScoreText>
                 <TimeDisplay color={getTimeColor}>⏰ Time: {time}s</TimeDisplay>
-                <span>Category: {question.category}</span>
+                <Category>Category: {question.category}</Category>
               </Info>
             </UserCard>
             <UserCard>
               <OptionPanel>
                 <OptionPanelTitle>
-                  🤔 What's the image meaning:
+                  🤔 What's the image meaning?
                 </OptionPanelTitle>
                 <Answers>
                   {question?.options?.map((answer, index) => (
@@ -236,6 +236,11 @@ const Info = styled.div`
 const ScoreText = styled.span`
   font-family: "VIDEOPHREAK", sans-serif;
   font-size: 1.5rem;
+`;
+
+const Category = styled.span`
+  font-weight: bold;
+  font-size: 1rem;
 `;
 
 const Answers = styled.div`
