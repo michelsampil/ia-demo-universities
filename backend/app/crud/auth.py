@@ -6,7 +6,10 @@ def get_user_by_email(db: Session, email: str):
     return db.query(UserModel).filter(UserModel.email == email).first()
 
 def create_user(db: Session, user: UserCreate):
-    db_user = UserModel(full_name=user.full_name, email=user.email)
+    db_user = UserModel(full_name=user.full_name,
+                        email=user.email,
+                        degree_program=user.degree_program,
+                        academic_year=user.academic_year)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)

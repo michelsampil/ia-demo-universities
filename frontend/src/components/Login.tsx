@@ -12,7 +12,7 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await api.post("auth/login", {
+      const response = await api.post("auth/signup", {
         email,
       });
 
@@ -34,7 +34,7 @@ const Login: React.FC = () => {
           placeholder="Email"
           required
         />
-        <Button type="submit">Sign up</Button>
+        <Button type="submit">Log in</Button>
         <Footer>
           <p>Don't have an account?</p>
           <Link href="/signup">Sign up here</Link>

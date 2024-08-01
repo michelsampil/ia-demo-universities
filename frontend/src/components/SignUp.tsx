@@ -15,11 +15,11 @@ const SignUp: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await api.post("auth/login", {
+      const response = await api.post("auth/signup", {
         full_name: fullName,
         email,
         degree_program: degreeProgram,
-        academic_year: academicYear,
+        academic_year: +academicYear,
       });
 
       login(response.data.access_token);
