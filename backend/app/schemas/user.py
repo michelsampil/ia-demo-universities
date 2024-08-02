@@ -5,12 +5,12 @@ class UserBase(BaseModel):
     email: EmailStr  # Ensures email validation
 
 class UserCreate(UserBase):
+    degree_program: str
+    academic_year: int
     # Removed password field as it's no longer needed
-    pass
 
 class UserOut(UserBase):
     id: int
     class Config:
         orm_mode = True  # Allows compatibility with ORM models
 
-# Removed UserInDB schema as hashed_password is no longer used

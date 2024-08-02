@@ -3,6 +3,11 @@ from pydantic import BaseModel
 class UserCreate(BaseModel):
     full_name: str
     email: str
+    degree_program: str
+    academic_year: int
+
+class UserLogin(BaseModel):
+    email: str
 
 class UserOut(BaseModel):
     id: int

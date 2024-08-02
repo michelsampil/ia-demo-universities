@@ -1,4 +1,5 @@
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 // Styled component for the card container
@@ -14,6 +15,7 @@ const ButtonContainer = styled.div`
   display: flex;
   flex-direction: column;
 `;
+
 // Styled component for the glass effect card
 const GlassCard = styled.div<{ rotation?: number }>`
   position: relative;
@@ -74,47 +76,62 @@ const Button = styled.button`
   }
 `;
 
+const CountdownOverlay = styled.div<{ show: boolean }>`
+  display: ${(props) => (props.show ? "flex" : "none")};
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 5rem;
+  z-index: 1000;
+  pointer-events: none; // Allow clicks to pass through the overlay
+`;
+
 const GameCategoryCards = () => {
+  const [countdown, setCountdown] = useState<number | null>(null);
   const navigate = useNavigate();
 
-  const handleNavigate = (category: string) => {
-    navigate(`/game?category=${category}`);
+  useEffect(() => {
+    if (countdown === 0) {
+      navigate("/game");
+    } else if (countdown !== null) {
+      const timer = setTimeout(
+        () => setCountdown((prev) => (prev === null ? null : prev! - 1)),
+        1000
+      );
+      return () => clearTimeout(timer);
+    }
+  }, [countdown, navigate]);
+
+  const handlePlayClick = () => {
+    setCountdown(3);
   };
 
-  const handleNavigateRanking = (category: string) => {
-    navigate(`/ranking?category=${category}`);
+  const handleRankingClick = () => {
+    navigate("/ranking");
   };
 
   return (
-    <CardContainer>
-      <GlassCard data-text="Idioms 🙊" rotation={-15}>
-        <ButtonContainer>
-          <Button onClick={() => handleNavigate("idioms")}> Play 🎮</Button>
-          <Button onClick={() => handleNavigateRanking("idioms")}>
-            {" "}
-            Ranking 📊
-          </Button>
-        </ButtonContainer>
-      </GlassCard>
-      <GlassCard data-text="Movies 🎬" rotation={5}>
-        <ButtonContainer>
-          <Button onClick={() => handleNavigate("movies")}> Play 🎮</Button>
-          <Button onClick={() => handleNavigateRanking("movies")}>
-            {" "}
-            Ranking 📊
-          </Button>
-        </ButtonContainer>
-      </GlassCard>
-      <GlassCard data-text="Songs 🎵" rotation={25}>
-        <ButtonContainer>
-          <Button onClick={() => handleNavigate("songs")}> Play 🎮</Button>
-          <Button onClick={() => handleNavigateRanking("songs")}>
-            {" "}
-            Ranking 📊
-          </Button>
-        </ButtonContainer>
-      </GlassCard>
-    </CardContainer>
+    <>
+      <CardContainer>
+        <GlassCard data-text="Play 🎮" rotation={-15}>
+          <ButtonContainer>
+            <Button onClick={handlePlayClick}>Play 🎮</Button>
+          </ButtonContainer>
+        </GlassCard>
+        <GlassCard data-text="Ranking 📊" rotation={5}>
+          <ButtonContainer>
+            <Button onClick={handleRankingClick}>Ranking 📊</Button>
+          </ButtonContainer>
+        </GlassCard>
+      </CardContainer>
+      <CountdownOverlay show={countdown !== null}>{countdown}</CountdownOverlay>
+    </>
   );
 };
 
