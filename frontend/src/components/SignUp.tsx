@@ -6,25 +6,49 @@ import { colors } from "../styles/colors";
 import { Button } from "./Game";
 
 const SignUp: React.FC = () => {
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [degreeProgram, setDegreeProgram] = useState("");
-  const [academicYear, setAcademicYear] = useState("");
+  const [fullName, setFullName] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [university, setUniversity] = useState<string>("");
+  const [degreeType, setDegreeType] = useState<string>("");
+  const [degreeProgram, setDegreeProgram] = useState<string>("");
+  const [customDegreeProgram, setCustomDegreeProgram] = useState<string>("");
+  const [academicYear, setAcademicYear] = useState<number | "">("");
   const { login } = useContext(AuthContext)!;
 
-  const ORTDegreePrograms = [
-    "LICENCIATURA EN INFORMATICA",
-    "INGENIERIA ELECTRICA",
-    "INGENIERIA EN ELECTRONICA",
-    "INGENIERIA EN SISTEMAS",
-    "INGENIERIA EN TELECOMUNICACIONES",
-    "LICENCIATURA EN SISTEMAS",
-    "INGENIERIA - POSTGRADO",
-    "INGENIERIA - CARRERA CORTA",
+  const ORTDegreeTypes: string[] = [
+    "CARRERAS UNIVERSITARIAS - INGENIERIA",
+    "CARRERAS CORTAS - INGENIERIA",
+    "POSTGRADOS - INGENIERIA",
     "OTRAS",
   ];
 
-  const UMDegreePrograms = [
+  const ORTDegreePrograms: { [key: string]: string[] } = {
+    "CARRERAS UNIVERSITARIAS - INGENIERIA": [
+      "INGENIERIA ELECTRICA",
+      "INGENIERIA EN ELECTRONICA",
+      "INGENIERIA EN SISTEMAS",
+      "INGENIERIA EN TELECOMUNICACIONES",
+      "LICENCIATURA EN SISTEMAS",
+    ],
+    "CARRERAS CORTAS - INGENIERIA": [
+      "ADMINISTRADOR DE SERVIDORES Y APLICACIONES",
+      "ANALISTA EN INFRAESTRUCTURA INFORMATICA",
+      "ANALISTA EN TECNOLOGIAS DE LA INFORMACION",
+      "ANALISTA PROGRAMADOR",
+    ],
+    "POSTGRADOS - INGENIERIA": [
+      "DIPLOMA DE ESPECIALIZACION EN ANALITICA DE BIGDATA",
+      "DIPLOMA DE ESPECIALIZACION EN CIBERSEGURIDAD",
+      "DIPLOMA DE ESPECIALIZACION EN GESTION DE SIETMAS DE INFORMACION",
+      "DIPLOMA DE ESPECIALIZACION EN INTELIGENCIA ARTIFICIAL",
+      "MASTER EN BIGDATA",
+      "MASTER EN GESTION DE SISTEMAS DE INFORMACION",
+      "MASTER DE INGENIERIA (POR INVESTIGACION)",
+    ],
+  };
+
+  const UMDegreePrograms: string[] = [
+    "LICENCIATURA EN INFORMATICA",
     "INENIERIA EN INFORMATICA",
     "INGENIERIA TELEMATICA",
     "INGENIERIA DE DATOS E INTELIGENCIA ARTIFICIAL",
@@ -34,14 +58,16 @@ const SignUp: React.FC = () => {
     "OTRAS",
   ];
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const selectedDegreeProgram =
+      degreeProgram === "OTRAS" ? customDegreeProgram : degreeProgram;
     try {
       const response = await api.post("auth/signup", {
         full_name: fullName,
         email,
-        degree_program: degreeProgram,
-        academic_year: +academicYear,
+        degree_program: selectedDegreeProgram,
+        academic_year: academicYear,
       });
 
       login(response.data.access_token);
@@ -73,40 +99,82 @@ const SignUp: React.FC = () => {
         />
         <SelectWrapper>
           <Select
-            value={degreeProgram}
-            onChange={(e) => setDegreeProgram(e.target.value)}
+            value={university}
+            onChange={(e) => {
+              setUniversity(e.target.value);
+              setDegreeType("");
+              setDegreeProgram("");
+            }}
             required
           >
             <option value="" disabled>
-              Degree Program
+              Select University
             </option>
-            {UMDegreePrograms.map((e) => {
-              return <option value={e}>{e}</option>;
-            })}
+            <option value="UM">UM</option>
+            <option value="ORT">ORT</option>
           </Select>
         </SelectWrapper>
-        {/* <Input
+        {university === "ORT" && (
+          <SelectWrapper>
+            <Select
+              value={degreeType}
+              onChange={(e) => {
+                setDegreeType(e.target.value);
+                setDegreeProgram("");
+              }}
+              required
+            >
+              <option value="" disabled>
+                Select Degree Type
+              </option>
+              {ORTDegreeTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </Select>
+          </SelectWrapper>
+        )}
+        {((university === "ORT" && degreeType && degreeType !== "OTRAS") ||
+          university === "UM") && (
+          <SelectWrapper>
+            <Select
+              value={degreeProgram}
+              onChange={(e) => setDegreeProgram(e.target.value)}
+              required
+            >
+              <option value="" disabled>
+                Select Degree Program
+              </option>
+              {(university === "UM"
+                ? UMDegreePrograms
+                : ORTDegreePrograms[degreeType] || []
+              ).map((program) => (
+                <option key={program} value={program}>
+                  {program}
+                </option>
+              ))}
+            </Select>
+          </SelectWrapper>
+        )}
+        {(degreeProgram === "OTRAS" ||
+          (degreeType === "OTRAS" && university === "ORT")) && (
+          <Input
+            type="text"
+            value={customDegreeProgram}
+            onChange={(e) => setCustomDegreeProgram(e.target.value)}
+            placeholder="Enter your degree program"
+            required
+          />
+        )}
+        <Input
           type="number"
           min="1"
           value={academicYear}
-          onChange={(e) => setAcademicYear(e.target.value)}
+          onChange={(e) => setAcademicYear(Number(e.target.value))}
           placeholder="Current Academic Year"
           required
-        /> */}
-        <SelectWrapper>
-          <Select
-            value={academicYear}
-            onChange={(e) => setAcademicYear(e.target.value)}
-            required
-          >
-            <option value="" disabled>
-              Academic Year
-            </option>
-            {[1, 2, 3, 4, 5].map((e) => {
-              return <option value={e}>{e}</option>;
-            })}
-          </Select>
-        </SelectWrapper>
+        />
         <Button type="submit">Sign up</Button>
         <Footer>
           <p>Already have an account?</p>
@@ -173,9 +241,12 @@ const SelectWrapper = styled.div`
     font-size: 1rem;
     top: 15px;
     right: 5px;
+    top: 50%;
+    right: 10px;
     position: absolute;
     pointer-events: none;
     color: ${colors.blackGray};
+    transform: translateY(-50%);
   }
 `;
 
