@@ -40,11 +40,11 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_text()
-            await handle_message(websocket, data, next(get_db()))
+            await handle_message(websocket, data)
     except Exception as e:
         print(f"Connection error: {e}")
-    # finally:
-    #     await handle_disconnect(websocket)
+    finally:
+        await handle_disconnect(websocket)
 
 if __name__ == "__main__":
     import uvicorn

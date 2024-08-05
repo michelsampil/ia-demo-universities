@@ -9,14 +9,14 @@ import { StyledCard } from "./Card";
 
 interface Question {
   id: number;
-  image: string;
+  image_url: string;
   options: string[];
   correctAnswer: string;
   category: string;
 }
 
 const Game: React.FC = () => {
-  const { user } = useContext(AuthContext)!;
+  const { token, user } = useContext(AuthContext)!;
   const navigate = useNavigate();
   const [question, setQuestion] = useState<Question | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -28,9 +28,19 @@ const Game: React.FC = () => {
     setSocket(ws);
 
     ws.onopen = () => {
-      console.log("Connected to WebSocket server");
+      console.log("Connected to WebSocket server", token);
       ws.send(
-        JSON.stringify({ event: "start_game", message: "Hello from React!" })
+        JSON.stringify({
+          event: "authenticate",
+          token: token || localStorage.getItem("token"),
+        })
+      );
+      ws.send(
+        JSON.stringify({
+          event: "start_game",
+          message: "Hello from React!",
+          token: token || localStorage.getItem("token"),
+        })
       );
     };
 
@@ -41,6 +51,7 @@ const Game: React.FC = () => {
       if (data.event === "question") {
         setQuestion(data.question);
       } else if (data.event === "time") {
+        console.log("time: ", data.time);
         setTime(data.time);
       } else if (data.event === "time_up") {
         handleTimeUp();
@@ -56,14 +67,14 @@ const Game: React.FC = () => {
     return () => {
       ws.close();
     };
-  }, []);
+  }, [token]);
 
   const handleAnswer = async (answer: string) => {
     setSelectedAnswer(answer);
     socket?.send(
       JSON.stringify({
         event: "submit_answer",
-        username: user.username,
+        username: user,
         question_id: question?.id,
         answer: answer,
       })
@@ -100,7 +111,7 @@ const Game: React.FC = () => {
           <LeftPanel>
             <QuestionCard>
               <Image
-                src={`http://localhost:8000/${question.image.slice(4)}`}
+                src={`http://localhost:8000/${question?.image_url?.slice(4)}`}
                 alt="question"
               />
             </QuestionCard>
@@ -255,14 +266,7 @@ const AnswerButton = styled.button`
   font-size: 1.5rem;
   color: white;
   cursor: pointer;
-  background-color: ${colors.lightTurquoise};
-  border: none;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-
-  cursor: pointer;
   background-color: ${colors.lightTurquoise}; // Button background
-  color: ${colors.blackGray}; // Button text color
   border: none;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
@@ -318,10 +322,4 @@ export const Button = styled.button`
   border: none;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
-
-  &:hover {
-    background-color: ${colors.neonTurquoise}; // Hover background color
-    box-shadow: 0 4px 12px ${colors.neonTurquoise}; // Hover shadow
-  }
 `;
