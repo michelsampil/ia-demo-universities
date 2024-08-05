@@ -100,7 +100,7 @@ const Game: React.FC = () => {
           <LeftPanel>
             <QuestionCard>
               <Image
-                src={`http://localhost:8000/assets/images/${question.image}.png`}
+                src={`http://localhost:8000/${question.image.slice(4)}`}
                 alt="question"
               />
             </QuestionCard>
