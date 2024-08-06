@@ -73,10 +73,11 @@ const Game: React.FC = () => {
     setSelectedAnswer(answer);
     socket?.send(
       JSON.stringify({
-        event: "submit_answer",
+        event: "answer",
         username: user,
         question_id: question?.id,
         answer: answer,
+        token: token || localStorage.getItem("token"),
       })
     );
   };
@@ -84,14 +85,15 @@ const Game: React.FC = () => {
   const handleTimeUp = async () => {
     setTime(0);
 
-    socket?.send(
-      JSON.stringify({
-        event: "submit_answer",
-        username: user.username,
-        question_id: question?.id,
-        answer: selectedAnswer,
-      })
-    );
+    // socket?.send(
+    //   JSON.stringify({
+    //     event: "submit_answer",
+    //     username: user.username,
+    //     question_id: question?.id,
+    //     answer: selectedAnswer,
+    //     token: token || localStorage.getItem("token"),
+    //   })
+    // );
   };
 
   const getTimeColor = useMemo(() => {

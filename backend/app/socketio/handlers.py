@@ -88,47 +88,63 @@ class GameHandler:
             await websocket.send_json(question_data)
             asyncio.create_task(self.update_time(websocket, user_email))
         except ValueError as e:
-            await websocket.send_json({"event": "error", "message": str(e)})
+            try:
+                await websocket.send_json({"event": "error", "message": str(e)})
+            except WebSocketDisconnect:
+                pass
 
     async def handle_answer(self, websocket: WebSocket, user_email: str, answer: str):
         correct_question = self.current_question.get(user_email)
+        print(f"🍌 correct_question: {correct_question}, answer: {answer}")
         if answer == correct_question:
             self.user_scores[user_email] = self.user_scores.get(user_email, 0) + 1
             self.first_question_time = max(10, self.first_question_time - self.time_decrement)
-            await websocket.send_json({
-                "event": "answer_result",
-                "correct": True,
-                "score": self.user_scores[user_email]
-            })
-            await self.send_question(websocket, user_email)  # Send new question only if the answer is correct
+            try:
+                await websocket.send_json({
+                    "event": "answer",
+                    "correct": True,
+                    "score": self.user_scores[user_email]
+                })
+                await self.send_question(websocket, user_email)  # Send new question only if the answer is correct
+            except WebSocketDisconnect:
+                pass
         else:
-            await websocket.send_json({
-                "event": "answer_result",
-                "correct": False,
-                "score": self.user_scores[user_email]
-            })
-            await websocket.send_json({
-                "event": "game_over",
-                "score": self.user_scores[user_email]
-            })
-            self.current_question.pop(user_email, None)  # Remove current question for the user
-            self.question_times.pop(user_email, None)  # Remove timer for the user
+            try:
+                await websocket.send_json({
+                    "event": "answer_result",
+                    "correct": False,
+                    "score": self.user_scores[user_email]
+                })
+                await websocket.send_json({
+                    "event": "game_over",
+                    "score": self.user_scores[user_email]
+                })
+                self.current_question.pop(user_email, None)  # Remove current question for the user
+                self.question_times.pop(user_email, None)  # Remove timer for the user
+            except WebSocketDisconnect:
+                pass
 
     async def update_time(self, websocket: WebSocket, user_email: str):
         while self.question_times.get(user_email, 0) > 0:
             await asyncio.sleep(self.time_update_interval)
             self.question_times[user_email] -= self.time_update_interval
-            await websocket.send_json({
-                "event": "time",
-                "time": self.question_times[user_email]
-            })
+            try:
+                await websocket.send_json({
+                    "event": "time",
+                    "time": self.question_times[user_email]
+                })
+            except WebSocketDisconnect:
+                break
 
         if self.question_times.get(user_email, 0) <= 0:
-            await websocket.send_json({
-                "event": "time_up"
-            })
-            # Send new question after time is up
-            await self.handle_answer(websocket, user_email, "")  # Trigger game over
+            try:
+                await websocket.send_json({
+                    "event": "time_up"
+                })
+                # Send new question after time is up
+                await self.handle_answer(websocket, user_email, "")  # Trigger game over
+            except WebSocketDisconnect:
+                pass
 
     async def on_connect(self, websocket: WebSocket):
         await websocket.accept()
@@ -142,22 +158,30 @@ class GameHandler:
         print(f"data is 🍊: {data}")
         token = data.get("token")
         if not token:
-            await websocket.send_json({"event": "error", "message": "Token is missing"})
+            try:
+                await websocket.send_json({"event": "error", "message": "Token is missing"})
+            except WebSocketDisconnect:
+                pass
             await websocket.close()
             return
 
         try:
             user_email = self.decode_token(token)
         except ValueError as e:
-            await websocket.send_json({"event": "error", "message": str(e)})
+            try:
+                await websocket.send_json({"event": "error", "message": str(e)})
+            except WebSocketDisconnect:
+                pass
             await websocket.close()
             return
 
         event = data.get("event")
+        print(f"🐑 antes del if envent: {event}")
         if event == "start_game":
             await self.send_question(websocket, user_email)
         elif event == "answer":
             answer = data.get("answer")
+            print(f"🙊 answer: {answer}, user: {user_email}")
             await self.handle_answer(websocket, user_email, answer)
 
 game_handler = GameHandler()
