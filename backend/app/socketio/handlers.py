@@ -126,24 +126,30 @@ class GameHandler:
                     "event": "game_over",
                     "score": self.user_scores[user_email]
                 })
+
+                print(f"before removing user... {user_email}")
+                print(f"current_question.. {self.current_question}")
+                print(f"question_times... {self.question_times}")
+
                 self.current_question.pop(user_email, None)  # Remove current question for the user
                 self.question_times.pop(user_email, None)  # Remove timer for the user
             except WebSocketDisconnect:
                 pass
 
     async def update_time(self, websocket: WebSocket, user_email: str):
-        while self.question_times.get(user_email, 0) > 0:
+        while user_email in self.question_times and self.question_times[user_email] > 0:
             await asyncio.sleep(self.time_update_interval)
-            self.question_times[user_email] -= self.time_update_interval
-            try:
-                await websocket.send_json({
-                    "event": "time",
-                    "time": self.question_times[user_email]
-                })
-            except WebSocketDisconnect:
-                break
+            if user_email in self.question_times:
+                self.question_times[user_email] -= self.time_update_interval
+                try:
+                    await websocket.send_json({
+                        "event": "time",
+                        "time": self.question_times[user_email]
+                    })
+                except WebSocketDisconnect:
+                    break
 
-        if self.question_times.get(user_email, 0) <= 0:
+        if user_email in self.question_times and self.question_times[user_email] <= 0:
             try:
                 await websocket.send_json({
                     "event": "time_up"
@@ -152,7 +158,7 @@ class GameHandler:
                 await self.handle_answer(websocket, user_email, "")  # Trigger game over
             except WebSocketDisconnect:
                 pass
-
+            
     async def on_connect(self, websocket: WebSocket):
         await websocket.accept()
         print(f"☕️ WebSocket connected")

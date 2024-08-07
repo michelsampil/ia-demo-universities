@@ -19,7 +19,6 @@ const Game: React.FC = () => {
   const { token, user } = useContext(AuthContext)!;
   const navigate = useNavigate();
   const [question, setQuestion] = useState<Question | null>(null);
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [time, setTime] = useState<number>(30);
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [score, setScore] = useState(0);
@@ -76,7 +75,6 @@ const Game: React.FC = () => {
 
   const handleAnswer = async (answer: string) => {
     console.log("answer: ", answer);
-    setSelectedAnswer(answer);
     socket?.send(
       JSON.stringify({
         event: "answer",
@@ -129,7 +127,7 @@ const Game: React.FC = () => {
       {question && (
         <>
           {pointsMessage && (
-            <PointsMessage show={!!pointsMessage}>
+            <PointsMessage show={!!pointsMessage && !gameOver}>
               {pointsMessage}
             </PointsMessage>
           )}{" "}
