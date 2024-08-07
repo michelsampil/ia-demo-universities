@@ -15,8 +15,8 @@ class GameHandler:
         self.user_scores: Dict[str, int] = {}
         self.current_question: Dict[str, str] = {}
         self.question_times: Dict[str, int] = {}  # Track remaining time per user
-        self.first_question_time = 30  # Initial time for the first question
-        self.time_decrement = 2  # Time decrement for each correct answer
+        self.first_question_time = 10  # Initial time for the first question
+        self.time_decrement = 1  # Time decrement for each correct answer
         self.time_update_interval = 1  # Time update interval in seconds
 
     def scan_images_folder(self) -> Dict[str, List[str]]:
@@ -78,18 +78,20 @@ class GameHandler:
             self.question_times[user_email] = self.first_question_time  # Initialize timer for user
             image_path = self.get_random_image_path(question)
             options = self.get_options(question)
+            category = image_path.split('/')[3]
             question_data = {
                 "event": "question",
                 "question": {
                     "image_url": image_path,
-                    "options": options
+                    "options": options,
+                    "category": category
                 }
             }
             await websocket.send_json(question_data)
             asyncio.create_task(self.update_time(websocket, user_email))
         except ValueError as e:
             try:
-                await websocket.send_json({"event": "error", "message": str(e)})
+                await websocket.send_json({"event": "error", "message": str(e) + "send_question"})
             except WebSocketDisconnect:
                 pass
 
@@ -99,9 +101,14 @@ class GameHandler:
         if answer == correct_question:
             self.user_scores[user_email] = self.user_scores.get(user_email, 0) + 1
             self.first_question_time = max(10, self.first_question_time - self.time_decrement)
+            print(f"🧙‍♂️ self.user_scores: {self.user_scores}")
+            print(f"🥶 self.question_times: {self.question_times}")
+
+             
+
             try:
                 await websocket.send_json({
-                    "event": "answer",
+                    "event": "answer_result",
                     "correct": True,
                     "score": self.user_scores[user_email]
                 })
@@ -176,6 +183,8 @@ class GameHandler:
             return
 
         event = data.get("event")
+
+        print(f"🦋 user_email: {user_email}")
         print(f"🐑 antes del if envent: {event}")
         if event == "start_game":
             await self.send_question(websocket, user_email)
