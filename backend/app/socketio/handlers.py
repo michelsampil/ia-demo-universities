@@ -1,10 +1,17 @@
+# handlers.py
+
 import jwt
 from fastapi import WebSocket, WebSocketDisconnect
-from typing import Dict, List
+from typing import Dict, List, Set
 import os
 import random
 import asyncio
 import json
+from datetime import datetime
+from sqlalchemy.orm import Session
+from app.models import score as models
+from app.schemas import score as schemas
+from app.db.database import SessionLocal
 
 SECRET_KEY = "your_secret_key"  # Replace with your actual secret key for JWT
 
@@ -18,6 +25,7 @@ class GameHandler:
         self.first_question_time = 10  # Initial time for the first question
         self.time_decrement = 1  # Time decrement for each correct answer
         self.time_update_interval = 1  # Time update interval in seconds
+        self.connected_clients: Set[WebSocket] = set()  # Track connected clients
 
     def scan_images_folder(self) -> Dict[str, List[str]]:
         questions = {}
@@ -104,8 +112,6 @@ class GameHandler:
             print(f"🧙‍♂️ self.user_scores: {self.user_scores}")
             print(f"🥶 self.question_times: {self.question_times}")
 
-             
-
             try:
                 await websocket.send_json({
                     "event": "answer_result",
@@ -116,6 +122,7 @@ class GameHandler:
             except WebSocketDisconnect:
                 pass
         else:
+            await self.save_user_score(user_email)
             try:
                 await websocket.send_json({
                     "event": "answer_result",
@@ -131,10 +138,69 @@ class GameHandler:
                 print(f"current_question.. {self.current_question}")
                 print(f"question_times... {self.question_times}")
 
-                self.current_question.pop(user_email, None)  # Remove current question for the user
-                self.question_times.pop(user_email, None)  # Remove timer for the user
+                self.clean_up_game(user_email)
             except WebSocketDisconnect:
                 pass
+
+    async def save_user_score(self, user_email: str):
+        # Save the user's score to the database and update positions
+        session: Session = SessionLocal()
+        try:
+            new_score = models.Score(
+                user_email=user_email,
+                value=self.user_scores[user_email],
+                date=datetime.now().strftime("%Y-%m-%d"),
+                timestamp=datetime.now()
+            )
+            session.add(new_score)
+            session.commit()
+            session.refresh(new_score)
+
+            # Update positions
+            scores = session.query(models.Score).order_by(models.Score.value.desc()).all()
+            for i, score in enumerate(scores):
+                score.position = i + 1
+                session.commit()
+
+            # Notify all connected clients with updated rankings
+            await self.notify_ranking_update()
+
+        finally:
+            session.close()
+
+    async def notify_ranking_update(self):
+        print(f"🐶 Notifing Ranking...")
+        # Fetch updated rankings from the database
+        session: Session = SessionLocal()
+        try:
+            scores = session.query(models.Score).order_by(models.Score.value.desc()).all()
+            ranking_data = [{
+                "user_email": score.user_email,
+                "score": score.value,
+                "position": score.position
+            } for score in scores]
+
+            print(f"ranking_data: {ranking_data}")
+
+            # Broadcast updated ranking to all connected clients
+            print(f"🦁 Connected Clients: {self.connected_clients}")
+            
+            for websocket in self.connected_clients:
+                try:
+                    await websocket.send_json({
+                        "event": "ranking_update",
+                        "ranking": ranking_data
+                    })
+                except WebSocketDisconnect:
+                    pass
+        finally:
+            print("finally...")
+            # session.close()
+
+    def clean_up_game(self, user_email: str):
+        self.current_question.pop(user_email, None)  # Remove current question for the user
+        self.question_times.pop(user_email, None)  # Remove timer for the user
+        self.user_scores.pop(user_email, None)  # Remove the score for the user
 
     async def update_time(self, websocket: WebSocket, user_email: str):
         while user_email in self.question_times and self.question_times[user_email] > 0:
@@ -161,10 +227,16 @@ class GameHandler:
             
     async def on_connect(self, websocket: WebSocket):
         await websocket.accept()
-        print(f"☕️ WebSocket connected")
+        self.connected_clients.add(websocket)
+        print(f"👽 WebSocket connected")
 
     async def on_disconnect(self, websocket: WebSocket):
-        print("WebSocket disconnected")
+        self.connected_clients.discard(websocket)
+        for user_email, ws in self.connected_clients:
+            if ws == websocket:
+                self.clean_up_game(user_email)
+                break
+        print("👻 WebSocket disconnected")
 
     async def on_receive(self, websocket: WebSocket, data: str):
         data = json.loads(data)  # Parse the JSON data

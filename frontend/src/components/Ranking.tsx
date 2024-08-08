@@ -6,6 +6,7 @@ interface Score {
   username: string;
   score: number;
   date: string;
+  position: number;
 }
 
 const Ranking: React.FC = () => {
@@ -14,28 +15,46 @@ const Ranking: React.FC = () => {
   useEffect(() => {
     const fetchScores = async () => {
       try {
-        const response = await api.get("/ranking");
-        setScores(response.data);
+        const response = await api.get("/scores/scores/top/10");
+        const userScores: Score[] = response.data.map((e: any) => ({
+          username: e.user_email,
+          score: e.value,
+          date: e.date,
+          position: e.position,
+        }));
+        setScores(userScores);
       } catch (error) {
         console.error("Failed to fetch scores", error);
       }
     };
 
     fetchScores();
+
+    // WebSocket connection for ranking updates
+    const socket = new WebSocket("ws://localhost:8000/ws"); // replace with your WebSocket server URL
+
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log("Message received:", data);
+      if (data.event === "ranking_update") {
+        const updatedScores: Score[] = data.ranking.map((e: any) => ({
+          username: e.user_email,
+          score: e.score,
+          date: e.date,
+          position: e.position,
+        }));
+        setScores(updatedScores);
+      }
+    };
+
+    socket.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
+
+    return () => {
+      socket.close();
+    };
   }, []);
-
-  // Add sample data if no scores are available
-  if (scores.length === 0) {
-    const scores = [
-      { username: "Michel Sampil", score: 1200, date: "2024-07-26T12:00:00Z" },
-      { username: "Alice", score: 1150, date: "2024-07-24T12:00:00Z" },
-      { username: "Bob", score: 1100, date: "2024-07-23T12:00:00Z" },
-      { username: "Charlie", score: 1050, date: "2024-07-22T12:00:00Z" },
-      { username: "David", score: 1000, date: "2024-07-21T12:00:00Z" },
-    ];
-
-    setScores(scores);
-  }
 
   return (
     <Container>
@@ -50,16 +69,16 @@ const Ranking: React.FC = () => {
           </tr>
         </thead>
         <tbody>
-          {scores.map((score, index) => {
+          {scores.map((score) => {
             let medalEmoji = "";
-            if (index === 0) medalEmoji = "🥇";
-            else if (index === 1) medalEmoji = "🥈";
-            else if (index === 2) medalEmoji = "🥉";
+            if (score.position === 1) medalEmoji = "🥇";
+            else if (score.position === 2) medalEmoji = "🥈";
+            else if (score.position === 3) medalEmoji = "🥉";
 
             return (
-              <tr key={index}>
+              <tr key={score.position}>
                 <td>
-                  {index + 1} {medalEmoji}
+                  {score.position} {medalEmoji}
                 </td>
                 <td>{score.username}</td>
                 <td style={{ color: colors.lightTurquoise }}>{score.score}</td>
