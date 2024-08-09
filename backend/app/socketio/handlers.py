@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.models import score as models
 from app.schemas import score as schemas
 from app.db.database import SessionLocal
+from datetime import datetime
 
 SECRET_KEY = "your_secret_key"  # Replace with your actual secret key for JWT
 
@@ -151,6 +152,7 @@ class GameHandler:
                 value=self.user_scores[user_email],
                 timestamp=datetime.now()  # Save the timestamp of the score
             )
+
             session.add(new_score)
             session.commit()
             session.refresh(new_score)
@@ -177,8 +179,7 @@ class GameHandler:
                 "user_email": score.user_email,
                 "score": score.value,
                 "position": score.position,
-                    "timestamp": score.timestamp.strftime("%Y-%m-%d %H:%M:%S")  # Include the timestamp
-
+                "timestamp": score.timestamp.strftime("%Y-%m-%d %H:%M:%S")  # Include the timestamp
             } for score in scores]
 
             print(f"ranking_data: {ranking_data}")

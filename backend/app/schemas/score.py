@@ -5,7 +5,6 @@ from datetime import datetime
 class ScoreBase(BaseModel):
     user_email: str
     value: int
-    date: str
     position: Optional[int] = None
     timestamp: datetime
 
