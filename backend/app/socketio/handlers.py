@@ -149,8 +149,7 @@ class GameHandler:
             new_score = models.Score(
                 user_email=user_email,
                 value=self.user_scores[user_email],
-                date=datetime.now().strftime("%Y-%m-%d"),
-                timestamp=datetime.now()
+                timestamp=datetime.now()  # Save the timestamp of the score
             )
             session.add(new_score)
             session.commit()
@@ -177,7 +176,9 @@ class GameHandler:
             ranking_data = [{
                 "user_email": score.user_email,
                 "score": score.value,
-                "position": score.position
+                "position": score.position,
+                    "timestamp": score.timestamp.strftime("%Y-%m-%d %H:%M:%S")  # Include the timestamp
+
             } for score in scores]
 
             print(f"ranking_data: {ranking_data}")

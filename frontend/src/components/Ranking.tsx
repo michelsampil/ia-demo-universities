@@ -5,7 +5,7 @@ import styled from "styled-components";
 interface Score {
   username: string;
   score: number;
-  date: string;
+  timestamp: string;
   position: number;
 }
 
@@ -19,7 +19,7 @@ const Ranking: React.FC = () => {
         const userScores: Score[] = response.data.map((e: any) => ({
           username: e.user_email,
           score: e.value,
-          date: e.date,
+          timestamp: e.timestamp, // Updated to use timestamp
           position: e.position,
         }));
         setScores(userScores);
@@ -40,7 +40,7 @@ const Ranking: React.FC = () => {
         const updatedScores: Score[] = data.ranking.map((e: any) => ({
           username: e.user_email,
           score: e.score,
-          date: e.date,
+          timestamp: e.timestamp, // Updated to use timestamp
           position: e.position,
         }));
         setScores(updatedScores);
@@ -82,7 +82,8 @@ const Ranking: React.FC = () => {
                 </td>
                 <td>{score.username}</td>
                 <td style={{ color: colors.lightTurquoise }}>{score.score}</td>
-                <td>{new Date(score.date).toLocaleDateString()}</td>
+                <td>{new Date(score.timestamp).toLocaleString()}</td>{" "}
+                {/* Updated to display timestamp */}
               </tr>
             );
           })}
