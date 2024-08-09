@@ -1,3 +1,9 @@
+# Images
+
+/backend/app/assets/images/idioms/*
+/backend/app/assets/images/movies/*
+/backend/app/assets/images/songs/*
+
 # Logs
 logs
 *.log
