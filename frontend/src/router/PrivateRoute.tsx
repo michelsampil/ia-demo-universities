@@ -4,8 +4,9 @@ import { AuthContext } from "../context/AuthContext";
 
 const PrivateRoute: React.FC = () => {
   const { user } = useContext(AuthContext)!;
+  const token = localStorage.getItem("token");
 
-  return user ? <Outlet /> : <Navigate to="/signup" />;
+  return user || token ? <Outlet /> : <Navigate to="/signup" />;
 };
 
 export default PrivateRoute;

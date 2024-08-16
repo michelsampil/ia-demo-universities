@@ -4,8 +4,17 @@ import { jwtDecode } from "jwt-decode";
 
 interface AuthContextType {
   user: any;
+  token: string;
   login: (token: string) => void;
   logout: () => void;
+}
+
+interface DecodedToken {
+  user: {
+    username: string;
+  };
+  exp: number;
+  iat: number;
 }
 
 interface AuthProviderProps {
@@ -18,6 +27,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<any>(null);
+  const [token, setToken] = useState<string>("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -27,9 +37,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  const login = (token: string) => {
-    localStorage.setItem("token", token);
-    setUser(jwtDecode(token));
+  const login = (incommingToken: string) => {
+    console.log("token 123: ", incommingToken);
+    localStorage.setItem("token", incommingToken);
+    const decodedToken = jwtDecode<DecodedToken>(incommingToken);
+    setUser(decodedToken.user);
+    setToken(incommingToken);
     navigate("/");
   };
 
@@ -40,7 +53,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, token, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

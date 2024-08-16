@@ -25,7 +25,7 @@ async def login_or_sign_up(request: Request, db: Session = Depends(get_db)):
 
         if db_user:
             # Existing user, return token
-            access_token = create_access_token(data={"sub": db_user.email})
+            access_token = create_access_token(data={"user": db_user.email})
             return {"access_token": access_token, "token_type": "bearer"}
             
         user_create = UserCreate(**jsonData)
@@ -42,7 +42,7 @@ async def login_or_sign_up(request: Request, db: Session = Depends(get_db)):
             db.add(new_user)
             db.commit()
             db.refresh(new_user)
-            access_token = create_access_token(data={"sub": new_user.email})
+            access_token = create_access_token(data={"user": new_user.email})
             return {"access_token": access_token, "token_type": "bearer"}
 
     except: raise HTTPException(

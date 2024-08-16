@@ -9,28 +9,40 @@ import { StyledCard } from "./Card";
 
 interface Question {
   id: number;
-  image: string;
+  image_url: string;
   options: string[];
   correctAnswer: string;
   category: string;
 }
 
 const Game: React.FC = () => {
-  const { user } = useContext(AuthContext)!;
+  const { token, user } = useContext(AuthContext)!;
   const navigate = useNavigate();
   const [question, setQuestion] = useState<Question | null>(null);
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [time, setTime] = useState<number>(30);
   const [socket, setSocket] = useState<WebSocket | null>(null);
+  const [score, setScore] = useState(0);
+  const [pointsMessage, setPointsMessage] = useState<string | null>(null);
+  const [gameOver, setGameOver] = useState(false);
 
   useEffect(() => {
     const ws = new WebSocket("ws://localhost:8000/ws");
     setSocket(ws);
 
     ws.onopen = () => {
-      console.log("Connected to WebSocket server");
+      console.log("Connected to WebSocket server", token);
       ws.send(
-        JSON.stringify({ event: "start_game", message: "Hello from React!" })
+        JSON.stringify({
+          event: "authenticate",
+          token: token || localStorage.getItem("token"),
+        })
+      );
+      ws.send(
+        JSON.stringify({
+          event: "start_game",
+          message: "Hello from React!",
+          token: token || localStorage.getItem("token"),
+        })
       );
     };
 
@@ -41,11 +53,14 @@ const Game: React.FC = () => {
       if (data.event === "question") {
         setQuestion(data.question);
       } else if (data.event === "time") {
+        console.log("time: ", data.time);
         setTime(data.time);
       } else if (data.event === "time_up") {
         handleTimeUp();
       } else if (data.event === "answer_result") {
-        // Handle answer result if needed
+        handleAnswerResult(data);
+      } else if (data.event === "game_over") {
+        handleGameOver(data);
       }
     };
 
@@ -56,31 +71,45 @@ const Game: React.FC = () => {
     return () => {
       ws.close();
     };
-  }, []);
+  }, [token]);
 
   const handleAnswer = async (answer: string) => {
-    setSelectedAnswer(answer);
+    console.log("answer: ", answer);
     socket?.send(
       JSON.stringify({
-        event: "submit_answer",
-        username: user.username,
+        event: "answer",
+        username: user,
         question_id: question?.id,
         answer: answer,
+        token: token || localStorage.getItem("token"),
       })
     );
   };
 
+  const handleAnswerResult = (data: any) => {
+    if (data.correct) {
+      setPointsMessage(`+${data.score - score}pts`);
+      setScore(data.score);
+    } else {
+      setPointsMessage(`0pts`);
+    }
+    setTimeout(() => setPointsMessage(null), 2000); // Clear the message after 2 seconds
+  };
+
+  const handleGameOver = (data: any) => {
+    if (data.correct) {
+      setScore((prevScore) => data.score);
+      setPointsMessage(`+${data.points}pts`);
+    } else {
+      // setPointsMessage(`0pts`);
+    }
+    setGameOver(true);
+    setTimeout(() => setPointsMessage(null), 2000); // Clear the message after 2 seconds
+  };
+
   const handleTimeUp = async () => {
     setTime(0);
-
-    socket?.send(
-      JSON.stringify({
-        event: "submit_answer",
-        username: user.username,
-        question_id: question?.id,
-        answer: selectedAnswer,
-      })
-    );
+    // maybe close connection
   };
 
   const getTimeColor = useMemo(() => {
@@ -97,10 +126,15 @@ const Game: React.FC = () => {
     <Container>
       {question && (
         <>
+          {pointsMessage && (
+            <PointsMessage show={!!pointsMessage && !gameOver}>
+              {pointsMessage}
+            </PointsMessage>
+          )}{" "}
           <LeftPanel>
             <QuestionCard>
               <Image
-                src={`http://localhost:8000/assets/images/${question.image}.png`}
+                src={`http://localhost:8000/${question?.image_url?.slice(4)}`}
                 alt="question"
               />
             </QuestionCard>
@@ -113,7 +147,7 @@ const Game: React.FC = () => {
               />
               <Info>
                 <h2>{user.username}</h2>
-                <ScoreText>Score: 100</ScoreText>
+                <ScoreText>Score: {score || 0}</ScoreText>
                 <TimeDisplay color={getTimeColor}>⏰ Time: {time}s</TimeDisplay>
                 <Category>Category: {question.category}</Category>
               </Info>
@@ -126,11 +160,11 @@ const Game: React.FC = () => {
                 <Answers>
                   {question?.options?.map((answer, index) => (
                     <AnswerButton
-                      key={index}
+                      key={`${index}-${question}`}
                       onClick={() => handleAnswer(answer)}
-                      disabled={!!selectedAnswer}
+                      // disabled={!!selectedAnswer}
                     >
-                      {answer}
+                      {answer?.split("/")[1].toLowerCase()}
                     </AnswerButton>
                   ))}
                 </Answers>
@@ -139,7 +173,7 @@ const Game: React.FC = () => {
           </RightPanel>
         </>
       )}
-      {time === 0 && (
+      {(time === 0 || gameOver) && (
         <Modal>
           <ModalContent>
             <GameOver>🎉 Game Over! 🎉</GameOver>
@@ -154,6 +188,7 @@ const Game: React.FC = () => {
 export default Game;
 
 const Container = styled.div`
+  height: 100vh;
   display: flex;
   background-color: ${colors.blackGray};
   color: ${colors.white};
@@ -176,6 +211,7 @@ const RightPanel = styled.div`
 `;
 
 const TimeDisplay = styled.span<{ color: string }>`
+  font-size: 2rem;
   color: ${(props) => props.color};
 `;
 
@@ -215,8 +251,8 @@ const UserCard = styled.div`
 `;
 
 const Avatar = styled.img`
-  width: 80px;
-  height: 80px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   margin-right: 1rem;
@@ -235,7 +271,7 @@ const Info = styled.div`
 
 const ScoreText = styled.span`
   font-family: "VIDEOPHREAK", sans-serif;
-  font-size: 1.5rem;
+  font-size: 2rem;
 `;
 
 const Category = styled.span`
@@ -255,14 +291,7 @@ const AnswerButton = styled.button`
   font-size: 1.5rem;
   color: white;
   cursor: pointer;
-  background-color: ${colors.lightTurquoise};
-  border: none;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-
-  cursor: pointer;
   background-color: ${colors.lightTurquoise}; // Button background
-  color: ${colors.blackGray}; // Button text color
   border: none;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
@@ -318,10 +347,28 @@ export const Button = styled.button`
   border: none;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+`;
 
-  &:hover {
-    background-color: ${colors.neonTurquoise}; // Hover background color
-    box-shadow: 0 4px 12px ${colors.neonTurquoise}; // Hover shadow
-  }
+const PointsMessage = styled.div<{ show: boolean }>`
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(
+    255,
+    255,
+    0,
+    0.2
+  ); // Semi-transparent yellow background
+  color: ${colors.neonYellow}; // Yellow font color
+  padding: 0.5rem 1rem;
+  font-size: 2rem;
+  font-weight: bold;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); // Cool drop shadow
+  z-index: 1001;
+  transition: opacity 0.5s ease-in-out, bottom 0.5s ease-in-out;
+  opacity: ${(props) => (props.show ? 1 : 0)};
+  bottom: ${(props) => (props.show ? "20px" : "0")}; // Slide from bottom
+  font-family: "Press Start 2P", cursive; // Game-like font
 `;
