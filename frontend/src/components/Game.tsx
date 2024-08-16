@@ -188,6 +188,7 @@ const Game: React.FC = () => {
 export default Game;
 
 const Container = styled.div`
+  height: 100vh;
   display: flex;
   background-color: ${colors.blackGray};
   color: ${colors.white};
@@ -210,6 +211,7 @@ const RightPanel = styled.div`
 `;
 
 const TimeDisplay = styled.span<{ color: string }>`
+  font-size: 2rem;
   color: ${(props) => props.color};
 `;
 
@@ -249,8 +251,8 @@ const UserCard = styled.div`
 `;
 
 const Avatar = styled.img`
-  width: 80px;
-  height: 80px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   margin-right: 1rem;
@@ -269,7 +271,7 @@ const Info = styled.div`
 
 const ScoreText = styled.span`
   font-family: "VIDEOPHREAK", sans-serif;
-  font-size: 1.5rem;
+  font-size: 2rem;
 `;
 
 const Category = styled.span`

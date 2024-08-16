@@ -13,6 +13,7 @@ from app.models import score as models
 from app.schemas import score as schemas
 from app.db.database import SessionLocal
 from datetime import datetime
+from urllib.parse import quote
 
 SECRET_KEY = "your_secret_key"  # Replace with your actual secret key for JWT
 
@@ -23,13 +24,15 @@ class GameHandler:
         self.user_scores: Dict[str, int] = {}
         self.current_question: Dict[str, str] = {}
         self.question_times: Dict[str, int] = {}  # Track remaining time per user
-        self.first_question_time = 10  # Initial time for the first question
+        self.first_question_time = 60  # Initial time for the first question
         self.time_decrement = 1  # Time decrement for each correct answer
         self.time_update_interval = 1  # Time update interval in seconds
         self.connected_clients: Set[WebSocket] = set()  # Track connected clients
 
     def scan_images_folder(self) -> Dict[str, List[str]]:
         questions = {}
+        valid_extensions = {".png", ".jpg", ".jpeg", ".gif"}  # Add any other valid image extensions
+
         if not os.path.exists(self.images_folder):
             print(f"Images folder '{self.images_folder}' does not exist.")
             return questions
@@ -42,13 +45,17 @@ class GameHandler:
                 for subfolder in subfolders:
                     subfolder_path = os.path.join(category_path, subfolder)
                     if os.path.isdir(subfolder_path):
-                        image_files = [name for name in os.listdir(subfolder_path) if os.path.isfile(os.path.join(subfolder_path, name))]
+                        image_files = [
+                            name for name in os.listdir(subfolder_path)
+                            if os.path.isfile(os.path.join(subfolder_path, name)) and
+                            os.path.splitext(name)[1].lower() in valid_extensions
+                        ]
                         if image_files:
                             question_key = f"{category}/{subfolder}"
                             questions[question_key] = image_files
                             print(f"Category: {category}, Subfolder: {subfolder}, Images found: {len(image_files)}")
         return questions
-
+    
     def get_random_question(self) -> str:
         if not self.questions:
             raise ValueError("No questions available.")
@@ -86,12 +93,15 @@ class GameHandler:
             self.current_question[user_email] = question
             self.question_times[user_email] = self.first_question_time  # Initialize timer for user
             image_path = self.get_random_image_path(question)
+            encoded_path = quote(image_path)
+
             options = self.get_options(question)
             category = image_path.split('/')[3]
+
             question_data = {
                 "event": "question",
                 "question": {
-                    "image_url": image_path,
+                    "image_url": encoded_path,
                     "options": options,
                     "category": category
                 }
