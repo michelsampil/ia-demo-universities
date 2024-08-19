@@ -6,6 +6,7 @@ import { AuthContext } from "../context/AuthContext";
 import api from "../services/api";
 import { colors } from "../styles/colors";
 import { StyledCard } from "./Card";
+import ChessboardReveal from "./ChessboardReveal";
 
 interface Question {
   id: number;
@@ -133,9 +134,10 @@ const Game: React.FC = () => {
           )}{" "}
           <LeftPanel>
             <QuestionCard>
-              <Image
-                src={`http://localhost:8000/${question?.image_url?.slice(4)}`}
-                alt="question"
+              <ChessboardReveal
+                imageUrl={`http://localhost:8000/${question?.image_url?.slice(
+                  4
+                )}`}
               />
             </QuestionCard>
           </LeftPanel>
