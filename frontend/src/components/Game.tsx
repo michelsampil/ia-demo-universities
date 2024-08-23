@@ -7,6 +7,7 @@ import api from "../services/api";
 import { colors } from "../styles/colors";
 import { StyledCard } from "./Card";
 import ChessboardReveal from "./ChessboardReveal";
+import Podium from "./Podium"; // Import the Podium component
 
 interface Question {
   id: number;
@@ -14,6 +15,12 @@ interface Question {
   options: string[];
   correctAnswer: string;
   category: string;
+}
+
+interface Score {
+  username: string;
+  score: number;
+  position: number;
 }
 
 const Game: React.FC = () => {
@@ -25,6 +32,7 @@ const Game: React.FC = () => {
   const [score, setScore] = useState(0);
   const [pointsMessage, setPointsMessage] = useState<string | null>(null);
   const [gameOver, setGameOver] = useState(false);
+  const [topThree, setTopThree] = useState<Score[]>([]); // State to hold top 3 players
 
   useEffect(() => {
     const ws = new WebSocket("ws://localhost:8000/ws");
@@ -54,7 +62,6 @@ const Game: React.FC = () => {
       if (data.event === "question") {
         setQuestion(data.question);
       } else if (data.event === "time") {
-        console.log("time: ", data.time);
         setTime(data.time);
       } else if (data.event === "time_up") {
         handleTimeUp();
@@ -62,6 +69,8 @@ const Game: React.FC = () => {
         handleAnswerResult(data);
       } else if (data.event === "game_over") {
         handleGameOver(data);
+      } else if (data.event === "ranking_update") {
+        handleRankingUpdate(data.ranking); // Handle ranking updates
       }
     };
 
@@ -74,8 +83,18 @@ const Game: React.FC = () => {
     };
   }, [token]);
 
+  const handleRankingUpdate = (scores: Score[]) => {
+    const topThreePlayers = scores
+      .map((e: any) => ({
+        username: e.user_email,
+        score: e.score,
+        position: e.position,
+      }))
+      .slice(0, 3);
+    setTopThree(topThreePlayers); // Update top 3 players
+  };
+
   const handleAnswer = async (answer: string) => {
-    console.log("answer: ", answer);
     socket?.send(
       JSON.stringify({
         event: "answer",
@@ -94,23 +113,16 @@ const Game: React.FC = () => {
     } else {
       setPointsMessage(`0pts`);
     }
-    setTimeout(() => setPointsMessage(null), 2000); // Clear the message after 2 seconds
+    setTimeout(() => setPointsMessage(null), 2000);
   };
 
   const handleGameOver = (data: any) => {
-    if (data.correct) {
-      setScore((prevScore) => data.score);
-      setPointsMessage(`+${data.points}pts`);
-    } else {
-      // setPointsMessage(`0pts`);
-    }
     setGameOver(true);
-    setTimeout(() => setPointsMessage(null), 2000); // Clear the message after 2 seconds
+    setTimeout(() => setPointsMessage(null), 2000);
   };
 
   const handleTimeUp = async () => {
     setTime(0);
-    // maybe close connection
   };
 
   const getTimeColor = useMemo(() => {
@@ -156,15 +168,12 @@ const Game: React.FC = () => {
             </UserCard>
             <UserCard>
               <OptionPanel>
-                <OptionPanelTitle>
-                  🤔 What's the image meaning?
-                </OptionPanelTitle>
+                <OptionPanelTitle>What's the image meaning?</OptionPanelTitle>
                 <Answers>
                   {question?.options?.map((answer, index) => (
                     <AnswerButton
                       key={`${index}-${question}`}
                       onClick={() => handleAnswer(answer)}
-                      // disabled={!!selectedAnswer}
                     >
                       {answer?.split("/")[1].toLowerCase()}
                     </AnswerButton>
@@ -172,6 +181,7 @@ const Game: React.FC = () => {
                 </Answers>
               </OptionPanel>
             </UserCard>
+            <Podium topThree={topThree} /> {/* Add the Podium component here */}
           </RightPanel>
         </>
       )}
@@ -197,7 +207,7 @@ const Container = styled.div`
 `;
 
 const LeftPanel = styled.div`
-  flex: 2;
+  flex: 1.35;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -209,7 +219,7 @@ const RightPanel = styled.div`
   flex-direction: column;
   justify-content: flex-start;
   align-items: space-between;
-  padding: 2rem;
+  padding: 1rem;
 `;
 
 const TimeDisplay = styled.span<{ color: string }>`
@@ -221,10 +231,8 @@ const OptionPanel = styled.div`
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  margin-bottom: 5rem;
   justify-content: space-between;
   align-items: space-between;
-  height: 60vh;
 `;
 
 const OptionPanelTitle = styled.h1``;
@@ -253,8 +261,8 @@ const UserCard = styled.div`
 `;
 
 const Avatar = styled.img`
-  width: 120px;
-  height: 120px;
+  width: 90px;
+  height: 90px;
   border-radius: 50%;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   margin-right: 1rem;
@@ -284,7 +292,7 @@ const Category = styled.span`
 const Answers = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.5rem;
   margin-bottom: 1rem;
 `;
 
@@ -298,6 +306,7 @@ const AnswerButton = styled.button`
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  width: 565px;
 
   &:hover {
     background-color: ${colors.neonTurquoise}; // Hover background color

@@ -112,7 +112,7 @@ const ChessboardReveal: React.FC<ChessboardRevealProps> = ({
         setTimeout(revealRandomSquares, 1000); // Start revealing after 1 second
         break;
     }
-  }, [totalSquares, revealMode]);
+  }, [totalSquares, revealMode, imageUrl]);
 
   return (
     <ImageContainer rows={rows} cols={cols}>

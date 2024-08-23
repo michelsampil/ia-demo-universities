@@ -89,6 +89,10 @@ class GameHandler:
 
     async def send_question(self, websocket: WebSocket, user_email: str):
         try:
+            # Send current ranking to all connected clients before starting the game
+            await self.notify_ranking_update()
+
+            # Proceed with sending the question
             question = self.get_random_question()
             self.current_question[user_email] = question
             self.question_times[user_email] = self.first_question_time  # Initialize timer for user

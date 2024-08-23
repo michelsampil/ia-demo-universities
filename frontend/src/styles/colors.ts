@@ -12,4 +12,7 @@ export const colors = {
   neonPink: "#FF66B2",
   neonGreen: "#39FF14",
   neonYellow: "#FFFF33",
+  tourqueeseStrong: "#01ECED",
+  tourqueeseMid: "#5FFEFF",
+  tourqueesePale: "#A2F3F3",
 };
