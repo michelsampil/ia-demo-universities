@@ -40,24 +40,79 @@ const ChessboardReveal: React.FC<ChessboardRevealProps> = ({
 }) => {
   const totalSquares = rows * cols;
   const [revealedSquares, setRevealedSquares] = useState<number[]>([]);
+  const [revealMode, setRevealMode] = useState<
+    "random" | "linear" | "diagonal"
+  >("random");
 
   useEffect(() => {
+    // Randomly select a reveal mode for this component instance
+    const modes: ("random" | "linear" | "diagonal")[] = [
+      "random",
+      "linear",
+      "diagonal",
+    ];
+    setRevealMode(modes[Math.floor(Math.random() * modes.length)]);
+
     const squareIndices = Array.from(
       { length: totalSquares },
       (_, index) => index
     );
 
-    const revealRandomSquare = () => {
+    const revealSquare = (index: number) => {
+      setRevealedSquares((prev) => [...prev, index]);
+    };
+
+    const revealRandomSquares = () => {
       if (squareIndices.length > 0) {
         const randomIndex = Math.floor(Math.random() * squareIndices.length);
         const squareIndex = squareIndices.splice(randomIndex, 1)[0];
-        setRevealedSquares((prev) => [...prev, squareIndex]);
-        setTimeout(revealRandomSquare, 200); // Delay between reveals
+        revealSquare(squareIndex);
+        setTimeout(revealRandomSquares, 200); // Delay between reveals
       }
     };
 
-    setTimeout(revealRandomSquare, 1000); // Start revealing after 1 second
-  }, [totalSquares]);
+    const revealLinearSquares = () => {
+      let index = 0;
+      const interval = setInterval(() => {
+        if (index < totalSquares) {
+          revealSquare(index);
+          index++;
+        } else {
+          clearInterval(interval);
+        }
+      }, 200); // Delay between reveals
+    };
+
+    const revealDiagonalSquares = () => {
+      for (let d = 0; d < rows + cols - 1; d++) {
+        for (
+          let row = Math.max(0, d - cols + 1);
+          row <= Math.min(rows - 1, d);
+          row++
+        ) {
+          const col = d - row;
+          const index = row * cols + col;
+          setTimeout(() => revealSquare(index), d * 200); // Delay based on diagonal distance
+        }
+      }
+    };
+
+    // Clear previous reveals
+    setRevealedSquares([]);
+
+    switch (revealMode) {
+      case "linear":
+        revealLinearSquares();
+        break;
+      case "diagonal":
+        revealDiagonalSquares();
+        break;
+      case "random":
+      default:
+        setTimeout(revealRandomSquares, 1000); // Start revealing after 1 second
+        break;
+    }
+  }, [totalSquares, revealMode]);
 
   return (
     <ImageContainer rows={rows} cols={cols}>
