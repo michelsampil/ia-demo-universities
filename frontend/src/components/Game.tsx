@@ -1,4 +1,3 @@
-// src/components/Game.js
 import React, { useState, useEffect, useContext, useMemo } from "react";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
@@ -71,6 +70,12 @@ const Game: React.FC = () => {
         handleGameOver(data);
       } else if (data.event === "ranking_update") {
         handleRankingUpdate(data.ranking); // Handle ranking updates
+      } else if (
+        data.event === "error" &&
+        data.message === "Token has expired"
+      ) {
+        localStorage.removeItem("token");
+        navigate("/signup");
       }
     };
 
@@ -143,7 +148,7 @@ const Game: React.FC = () => {
             <PointsMessage show={!!pointsMessage && !gameOver}>
               {pointsMessage}
             </PointsMessage>
-          )}{" "}
+          )}
           <LeftPanel>
             <QuestionCard>
               <ChessboardReveal

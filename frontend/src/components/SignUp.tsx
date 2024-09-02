@@ -1,4 +1,5 @@
 import React, { useState, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import api from "../services/api";
 import styled from "styled-components";
@@ -20,7 +21,9 @@ const SignUp: React.FC = () => {
   const [degreeProgram, setDegreeProgram] = useState<string>("");
   const [customDegreeProgram, setCustomDegreeProgram] = useState<string>("");
   const [academicYear, setAcademicYear] = useState<number | "">("");
+
   const { login } = useContext(AuthContext)!;
+  const navigate = useNavigate(); // Initialize useNavigate
 
   const ORTDegreeTypes: string[] = [
     "CARRERAS UNIVERSITARIAS - INGENIERIA",
@@ -46,7 +49,7 @@ const SignUp: React.FC = () => {
     "POSTGRADOS - INGENIERIA": [
       "DIPLOMA DE ESPECIALIZACION EN ANALITICA DE BIGDATA",
       "DIPLOMA DE ESPECIALIZACION EN CIBERSEGURIDAD",
-      "DIPLOMA DE ESPECIALIZACION EN GESTION DE SIETMAS DE INFORMACION",
+      "DIPLOMA DE ESPECIALIZACION EN GESTION DE SISTEMAS DE INFORMACION",
       "DIPLOMA DE ESPECIALIZACION EN INTELIGENCIA ARTIFICIAL",
       "MASTER EN BIGDATA",
       "MASTER EN GESTION DE SISTEMAS DE INFORMACION",
@@ -78,6 +81,9 @@ const SignUp: React.FC = () => {
       });
 
       login(response.data.access_token);
+
+      // Redirect to home on successful login
+      navigate("/");
     } catch (error) {
       console.error("Login failed", error);
     }
@@ -87,9 +93,6 @@ const SignUp: React.FC = () => {
     <Container>
       <Form onSubmit={handleSubmit}>
         <Title>Welcome</Title>
-        {/* <Subtitle>
-          Please enter your details in order to start playing 🎮.
-        </Subtitle> */}
         <Input
           type="text"
           value={fullName}
@@ -192,6 +195,7 @@ const SignUp: React.FC = () => {
     </Container>
   );
 };
+
 export const Select = styled.select`
   color: ${colors.coolGray};
   padding: 0.75rem;
