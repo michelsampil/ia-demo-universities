@@ -76,11 +76,11 @@ const Ranking: React.FC = () => {
             else if (score.position === 3) medalEmoji = "🥉";
 
             return (
-              <tr key={score.position}>
+              <tr key={score?.position}>
                 <td>
-                  {score.position} {medalEmoji}
+                  {score?.position} {medalEmoji}
                 </td>
-                <td>{score.username}</td>
+                <td>{score?.username}</td>
                 <td style={{ color: colors.lightTurquoise }}>{score.score}</td>
                 <td>{new Date(score.timestamp).toLocaleString()}</td>{" "}
                 {/* Updated to display timestamp */}

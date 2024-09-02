@@ -8,7 +8,7 @@ import bronceMedal from "../assets/images/bronce-medal.png";
 interface Score {
   username: string;
   score: number;
-  position: number;
+  position?: number; // Made position optional to handle undefined cases
 }
 
 interface PodiumProps {
@@ -21,22 +21,27 @@ const Podium: React.FC<PodiumProps> = ({ topThree }) => {
 
   return (
     <PodiumContainer>
-      {orderedTopThree.map((user, index) => (
-        <PodiumPlace key={user.position} position={user.position}>
-          <Medal>
-            <img
-              src={
-                index === 0 ? plateMedal : index === 1 ? goldMedal : bronceMedal
-              }
-              alt={`medal-${
-                index === 0 ? "gold" : index === 1 ? "plate" : "bronce"
-              }`}
-            />
-          </Medal>
-          <Username>{user.username}</Username>
-          <Score>{user.score} pts</Score>
-        </PodiumPlace>
-      ))}
+      {orderedTopThree.length > 0 &&
+        orderedTopThree.map((user, index) => (
+          <PodiumPlace key={index} position={user?.position}>
+            <Medal>
+              <img
+                src={
+                  index === 0
+                    ? plateMedal
+                    : index === 1
+                    ? goldMedal
+                    : bronceMedal
+                }
+                alt={`medal-${
+                  index === 0 ? "plate" : index === 1 ? "gold" : "bronce"
+                }`}
+              />
+            </Medal>
+            {user?.username && <Username>{user?.username}</Username>}
+            <Score>{user?.score} pts</Score>
+          </PodiumPlace>
+        ))}
     </PodiumContainer>
   );
 };
@@ -52,27 +57,32 @@ const PodiumContainer = styled.div`
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 `;
 
-const PodiumPlace = styled.div<{ position: number }>`
+const PodiumPlace = styled.div<{ position?: number }>`
+  // Made position optional
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   width: 100px;
-  height: ${(props) =>
-    props.position === 1 ? "220px" : props.position === 2 ? "170px" : "120px"};
-  background-color: ${(props) =>
-    props.position === 1
-      ? colors.tourqueeseStrong
-      : props.position === 2
-      ? colors.tourqueeseMid
-      : colors.tourqueesePale};
+  height: ${(props) => {
+    if (props.position === 1) return "220px";
+    if (props.position === 2) return "170px";
+    if (props.position === 3) return "120px";
+    return "150px"; // Default height for undefined positions
+  }};
+  background-color: ${(props) => {
+    if (props.position === 1) return colors.tourqueeseStrong;
+    if (props.position === 2) return colors.tourqueeseMid;
+    if (props.position === 3) return colors.tourqueesePale;
+    return colors.gray; // Default color for undefined positions
+  }};
   color: ${colors.blackGray};
-  border-radius: ${(props) =>
-    props.position === 1
-      ? "30px 30px 0 0"
-      : props.position === 2
-      ? "30px 0 0 0"
-      : "0 30px 0 0"};
+  border-radius: ${(props) => {
+    if (props.position === 1) return "30px 30px 0 0";
+    if (props.position === 2) return "30px 0 0 0";
+    if (props.position === 3) return "0 30px 0 0";
+    return "10px"; // Default border-radius for undefined positions
+  }};
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   position: relative;
   transition: height 0.5s ease-in-out;

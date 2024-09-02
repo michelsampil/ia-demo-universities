@@ -181,7 +181,7 @@ const Game: React.FC = () => {
                 </Answers>
               </OptionPanel>
             </UserCard>
-            <Podium topThree={topThree} /> {/* Add the Podium component here */}
+            {topThree.length > 0 && <Podium topThree={topThree} />}
           </RightPanel>
         </>
       )}
