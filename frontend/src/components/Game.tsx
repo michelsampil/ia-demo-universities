@@ -114,7 +114,7 @@ const Game: React.FC = () => {
 
   const handleAnswerResult = (data: any) => {
     if (data.correct) {
-      setPointsMessage(`+${data.score - score}pts`);
+      setPointsMessage(`+${data.score}pts`);
       setScore(data.score);
     } else {
       setPointsMessage(`0pts`);
@@ -168,7 +168,7 @@ const Game: React.FC = () => {
               <Info>
                 <h2>{user.username}</h2>
                 <ScoreText>Score: {score || 0}</ScoreText>
-                <TimeDisplay color={getTimeColor}>⏰ Time: {time}s</TimeDisplay>
+                <TimeDisplay color={getTimeColor}>Time: {time}s</TimeDisplay>
                 <Category>Category: {question.category}</Category>
               </Info>
             </UserCard>
@@ -284,6 +284,7 @@ const UserCard = styled.div`
   display: flex;
   align-items: center;
   margin-bottom: 1rem;
+  margin-top: 20px;
 `;
 
 const OptionsCard = styled.div`
