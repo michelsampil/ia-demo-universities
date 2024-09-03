@@ -11,7 +11,6 @@ export const colors = {
   blackGray: "#252525",
   neonRed: "#FF073A",
   neonPink: "#FF66B2",
-  neonGreen: "#39FF14",
   neonYellow: "#FFFF33",
   tourqueeseStrong: "#01ECED",
   tourqueeseMid: "#5FFEFF",

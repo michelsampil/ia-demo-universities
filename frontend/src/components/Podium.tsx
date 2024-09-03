@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
+import Confetti from "react-confetti";
 import { colors } from "../styles/colors";
 import goldMedal from "../assets/images/gold-medal.png";
 import plateMedal from "../assets/images/plate-medal.png";
@@ -16,11 +17,41 @@ interface PodiumProps {
 }
 
 const Podium: React.FC<PodiumProps> = ({ topThree }) => {
+  const [showConfetti, setShowConfetti] = useState(false);
+  const previousTopThreeRef = useRef<Score[]>([]);
+
   // Sort topThree based on the desired order: 2, 1, 3
   const orderedTopThree = [topThree[1], topThree[0], topThree[2]];
 
+  useEffect(() => {
+    // Check if the scores have changed compared to the previous render
+    const hasScoreChanged = topThree.some((user, index) => {
+      const previousUser = previousTopThreeRef.current[index];
+      return previousUser && user.score !== previousUser.score;
+    });
+
+    if (hasScoreChanged) {
+      setShowConfetti(true);
+
+      // Stop confetti after a short duration
+      const timer = setTimeout(() => {
+        setShowConfetti(false);
+      }, 5000); // Adjust the duration as needed
+
+      // Cleanup timer on component unmount or when topThree changes
+      return () => clearTimeout(timer);
+    }
+
+    // Update the ref with the current topThree for the next render
+    previousTopThreeRef.current = topThree;
+  }, [topThree]);
+
   return (
     <PodiumContainer>
+      {showConfetti && (
+        <Confetti width={window.innerWidth} height={window.innerHeight} />
+      )}
+
       {orderedTopThree.length > 0 &&
         orderedTopThree.map((user, index) => (
           <PodiumPlace key={index} position={user?.position}>
@@ -54,10 +85,10 @@ const PodiumContainer = styled.div`
   padding: 2rem;
   background-color: ${colors.washedBlue};
   border-radius: 8px;
+  position: relative; /* Ensure confetti is visible within the container */
 `;
 
 const PodiumPlace = styled.div<{ position?: number }>`
-  // Made position optional
   display: flex;
   flex-direction: column;
   justify-content: center;

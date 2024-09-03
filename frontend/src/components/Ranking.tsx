@@ -3,6 +3,11 @@ import api from "../services/api";
 import styled from "styled-components";
 import { Container } from "./Home";
 import { colors } from "../styles/colors";
+import Confetti from "react-confetti";
+
+import goldMedal from "../assets/images/gold-medal.png";
+import silverMedal from "../assets/images/plate-medal.png";
+import bronzeMedal from "../assets/images/bronce-medal.png";
 
 interface Score {
   username: string;
@@ -13,6 +18,7 @@ interface Score {
 
 const Ranking: React.FC = () => {
   const [scores, setScores] = useState<Score[]>([]);
+  const [confettiAmount, setConfettiAmount] = useState(1200);
 
   useEffect(() => {
     const fetchScores = async () => {
@@ -56,10 +62,20 @@ const Ranking: React.FC = () => {
     };
   }, []);
 
+  console.log("confeti", confettiAmount);
+
   return (
     <Container>
+      <Confetti
+        width={window.innerWidth}
+        height={window.innerHeight}
+        numberOfPieces={confettiAmount}
+        recycle={false}
+        tweenDuration={30000}
+      />
+
       <RankingContainer>
-        <Title> Ranking </Title>
+        <Title>Ranking</Title>
         <StyledTable>
           <thead>
             <tr>
@@ -71,15 +87,24 @@ const Ranking: React.FC = () => {
           </thead>
           <tbody>
             {scores.map((score) => {
-              let medalEmoji = "";
-              if (score.position === 1) medalEmoji = "🥇";
-              else if (score.position === 2) medalEmoji = "🥈";
-              else if (score.position === 3) medalEmoji = "🥉";
+              let medalImage = "";
+              if (score.position === 1) medalImage = goldMedal;
+              else if (score.position === 2) medalImage = silverMedal;
+              else if (score.position === 3) medalImage = bronzeMedal;
 
               return (
                 <tr key={score.position}>
                   <td>
-                    {score.position} {medalEmoji}
+                    <PositionCell>
+                      {score.position}{" "}
+                      {medalImage && (
+                        <img
+                          src={medalImage}
+                          alt="medal"
+                          style={{ width: "24px", height: "24px" }}
+                        />
+                      )}
+                    </PositionCell>
                   </td>
                   <td>{score.username}</td>
                   <ScoreValue>{score.score}</ScoreValue>
@@ -102,6 +127,13 @@ const Ranking: React.FC = () => {
 
 export default Ranking;
 
+const PositionCell = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
 const RankingContainer = styled.div`
   height: 100vh;
   padding: 2rem;
@@ -117,8 +149,8 @@ const StyledTable = styled.table`
   width: 100%;
   border-collapse: collapse;
   border-radius: 16px;
-  overflow: hidden; /* Ensures the border-radius is applied to the entire table */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 
   th,
   td {
@@ -140,11 +172,10 @@ const StyledTable = styled.table`
     background-color: ${colors.tourqueeseMid};
   }
 
-  /* Highlight row on hover */
   tr:hover {
-    background-color: ${colors.tourqueeseBright}; /* Brighter background on hover */
-    border: 2px solid ${colors.lightTurquoise}; /* Light border to create a glowing effect */
-    box-shadow: 0 0 8px ${colors.lightTurquoise}; /* Glow effect around the row */
+    background-color: ${colors.tourqueeseBright};
+    border: 2px solid ${colors.lightTurquoise};
+    box-shadow: 0 0 8px ${colors.lightTurquoise};
   }
 `;
 
