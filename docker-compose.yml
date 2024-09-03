@@ -1,0 +1,32 @@
+# docker-compose.yml
+
+version: "3.8"
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80" # Map port 3000 on the host to port 80 in the container
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - user-backups:/app/backups # Mount the 'backups' folder to persist data
+    ports:
+      - "8000:8000" # Map port 8000 on the host to port 8000 in the container
+    networks:
+      - app-network
+
+volumes:
+  user-backups:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge

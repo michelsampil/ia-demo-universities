@@ -43,7 +43,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const decodedToken = jwtDecode<DecodedToken>(incommingToken);
     setUser(decodedToken.user);
     setToken(incommingToken);
-    navigate("/");
+    // navigate("/");
   };
 
   const logout = () => {

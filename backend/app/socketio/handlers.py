@@ -22,10 +22,11 @@ class GameHandler:
         self.images_folder = "app/assets/images"
         self.questions: Dict[str, List[str]] = self.scan_images_folder()
         self.user_scores: Dict[str, int] = {}
+        self.user_timers: Dict[str, asyncio.Task] = {}  # Track active timers per user
         self.current_question: Dict[str, str] = {}
         self.question_times: Dict[str, int] = {}  # Track remaining time per user
         self.first_question_time = 60  # Initial time for the first question
-        self.time_decrement = 1  # Time decrement for each correct answer
+        self.time_decrement = 2  # Time decrement for each correct answer
         self.time_update_interval = 1  # Time update interval in seconds
         self.connected_clients: Set[WebSocket] = set()  # Track connected clients
 
@@ -89,6 +90,13 @@ class GameHandler:
 
     async def send_question(self, websocket: WebSocket, user_email: str):
         try:
+            # Cancel any existing timer before starting a new question
+            self.cancel_user_timer(user_email)
+
+            # Send current ranking to all connected clients before starting the game
+            await self.notify_ranking_update()
+
+            # Proceed with sending the question
             question = self.get_random_question()
             self.current_question[user_email] = question
             self.question_times[user_email] = self.first_question_time  # Initialize timer for user
@@ -107,16 +115,24 @@ class GameHandler:
                 }
             }
             await websocket.send_json(question_data)
-            asyncio.create_task(self.update_time(websocket, user_email))
+
+            # Start the timer for the user
+            self.user_timers[user_email] = asyncio.create_task(self.update_time(websocket, user_email))
         except ValueError as e:
             try:
-                await websocket.send_json({"event": "error", "message": str(e) + "send_question"})
+                await websocket.send_json({"event": "error", "message": str(e)})
             except WebSocketDisconnect:
                 pass
+
 
     async def handle_answer(self, websocket: WebSocket, user_email: str, answer: str):
         correct_question = self.current_question.get(user_email)
         print(f"🍌 correct_question: {correct_question}, answer: {answer}")
+        
+        if user_email not in self.user_scores:
+            self.user_scores[user_email] = 0  # Initialize score if it doesn't exist
+
+        
         if answer == correct_question:
             self.user_scores[user_email] = self.user_scores.get(user_email, 0) + 1
             self.first_question_time = max(10, self.first_question_time - self.time_decrement)
@@ -207,13 +223,19 @@ class GameHandler:
                     pass
         finally:
             print("finally...")
-            # session.close()
+            session.close()
+
+    def cancel_user_timer(self, user_email: str):
+            if user_email in self.user_timers:
+                self.user_timers[user_email].cancel()
+                del self.user_timers[user_email]
 
     def clean_up_game(self, user_email: str):
+        self.cancel_user_timer(user_email)  # Cancel any running timer
         self.current_question.pop(user_email, None)  # Remove current question for the user
         self.question_times.pop(user_email, None)  # Remove timer for the user
         self.user_scores.pop(user_email, None)  # Remove the score for the user
-
+    
     async def update_time(self, websocket: WebSocket, user_email: str):
         while user_email in self.question_times and self.question_times[user_email] > 0:
             await asyncio.sleep(self.time_update_interval)
@@ -236,7 +258,7 @@ class GameHandler:
                 await self.handle_answer(websocket, user_email, "")  # Trigger game over
             except WebSocketDisconnect:
                 pass
-            
+
     async def on_connect(self, websocket: WebSocket):
         await websocket.accept()
         self.connected_clients.add(websocket)
@@ -249,7 +271,6 @@ class GameHandler:
                 self.clean_up_game(user_email)
                 break
         print("👻 WebSocket disconnected")
-
     async def on_receive(self, websocket: WebSocket, data: str):
         data = json.loads(data)  # Parse the JSON data
         print(f"data is 🍊: {data}")

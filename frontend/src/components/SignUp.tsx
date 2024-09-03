@@ -1,9 +1,17 @@
 import React, { useState, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import api from "../services/api";
 import styled from "styled-components";
 import { colors } from "../styles/colors";
-import { Button } from "./Game";
+import { BlendIcon } from "./BlendIcon";
+import { Container } from "./Container";
+import { Form } from "./Form";
+import { Footer } from "./form/Footer";
+import { Title } from "./form/Title";
+import { Input } from "./form/Input";
+import { Button } from "./form/Button";
+import { Link } from "./form/Link";
 
 const SignUp: React.FC = () => {
   const [fullName, setFullName] = useState<string>("");
@@ -13,7 +21,9 @@ const SignUp: React.FC = () => {
   const [degreeProgram, setDegreeProgram] = useState<string>("");
   const [customDegreeProgram, setCustomDegreeProgram] = useState<string>("");
   const [academicYear, setAcademicYear] = useState<number | "">("");
+
   const { login } = useContext(AuthContext)!;
+  const navigate = useNavigate(); // Initialize useNavigate
 
   const ORTDegreeTypes: string[] = [
     "CARRERAS UNIVERSITARIAS - INGENIERIA",
@@ -39,7 +49,7 @@ const SignUp: React.FC = () => {
     "POSTGRADOS - INGENIERIA": [
       "DIPLOMA DE ESPECIALIZACION EN ANALITICA DE BIGDATA",
       "DIPLOMA DE ESPECIALIZACION EN CIBERSEGURIDAD",
-      "DIPLOMA DE ESPECIALIZACION EN GESTION DE SIETMAS DE INFORMACION",
+      "DIPLOMA DE ESPECIALIZACION EN GESTION DE SISTEMAS DE INFORMACION",
       "DIPLOMA DE ESPECIALIZACION EN INTELIGENCIA ARTIFICIAL",
       "MASTER EN BIGDATA",
       "MASTER EN GESTION DE SISTEMAS DE INFORMACION",
@@ -71,6 +81,9 @@ const SignUp: React.FC = () => {
       });
 
       login(response.data.access_token);
+
+      // Redirect to home on successful login
+      navigate("/");
     } catch (error) {
       console.error("Login failed", error);
     }
@@ -79,10 +92,7 @@ const SignUp: React.FC = () => {
   return (
     <Container>
       <Form onSubmit={handleSubmit}>
-        <Title>Job Fair Registry</Title>
-        <Subtitle>
-          Please enter your details in order to start playing 🎮.
-        </Subtitle>
+        <Title>Welcome</Title>
         <Input
           type="text"
           value={fullName}
@@ -177,62 +187,34 @@ const SignUp: React.FC = () => {
         />
         <Button type="submit">Sign up</Button>
         <Footer>
-          <p>Already have an account?</p>
-          <Link href="/login">Log in here</Link>
+          <span>Already played?</span>
+          <Link href="/login">Log in</Link>
         </Footer>
+        <BlendIcon />
       </Form>
     </Container>
   );
 };
 
-export default SignUp;
-
-const Container = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background-color: ${colors.blackGray};
-`;
-
-const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  background-color: ${colors.coolGray};
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px ${colors.gray};
-  max-width: 400px;
-  width: 100%;
-`;
-
-const Title = styled.h1`
-  font-size: 2rem;
-  color: ${colors.offWhite};
-  margin: 0;
-`;
-
-const Subtitle = styled.p`
-  font-size: 1rem;
-  color: ${colors.offWhite};
-  margin-bottom: 1rem;
-`;
-
-const Input = styled.input`
+export const Select = styled.select`
+  color: ${colors.coolGray};
   padding: 0.75rem;
   font-size: 1rem;
-  border: 1px solid ${colors.coolGray};
-  border-radius: 4px;
+  border: 1px solid ${colors.white};
+  border-radius: 16px;
   outline: none;
   transition: border-color 0.3s ease;
+  appearance: none; /* Remove default arrow */
+  background: none; /* Remove default background */
+  width: 100%;
+  background: white;
 
   &:focus {
     border-color: ${colors.lightTurquoise};
   }
 `;
 
-const SelectWrapper = styled.div`
+export const SelectWrapper = styled.div`
   position: relative;
 
   &::after {
@@ -250,39 +232,4 @@ const SelectWrapper = styled.div`
   }
 `;
 
-const Select = styled.select`
-  color: ${colors.coolGray};
-  padding: 0.75rem;
-  font-size: 1rem;
-  border: 1px solid ${colors.coolGray};
-  border-radius: 4px;
-  outline: none;
-  transition: border-color 0.3s ease;
-  appearance: none; /* Remove default arrow */
-  background: none; /* Remove default background */
-  width: 100%;
-  background: white;
-
-  &:focus {
-    border-color: ${colors.lightTurquoise};
-  }
-`;
-
-const Footer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: ${colors.gray};
-`;
-
-const Link = styled.a`
-  color: ${colors.lightTurquoise};
-  text-decoration: none;
-  font-weight: bold;
-
-  &:hover {
-    text-decoration: underline;
-  }
-`;
+export default SignUp;

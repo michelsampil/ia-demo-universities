@@ -12,3 +12,7 @@ Placed in Backend folder run:
 
 - source venv/bin/activate
 - uvicorn app.main:app --reload
+
+## Running BE and FE Dockerized
+
+- docker-compose up --build

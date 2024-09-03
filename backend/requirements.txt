@@ -5,3 +5,4 @@ pydantic
 python-jose
 passlib[bcrypt]
 fastapi-socketio
+PyJWT==2.8.0

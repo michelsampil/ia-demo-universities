@@ -1,4 +1,3 @@
-// src/components/Game.js
 import React, { useState, useEffect, useContext, useMemo } from "react";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
@@ -6,13 +5,22 @@ import { AuthContext } from "../context/AuthContext";
 import api from "../services/api";
 import { colors } from "../styles/colors";
 import { StyledCard } from "./Card";
-
+import ChessboardReveal from "./ChessboardReveal";
+import Podium from "./Podium"; // Import the Podium component
+import ScoreBox from "./ScoreBox";
+import Avatar from "./Avatar";
 interface Question {
   id: number;
   image_url: string;
   options: string[];
   correctAnswer: string;
   category: string;
+}
+
+interface Score {
+  username: string;
+  score: number;
+  position: number;
 }
 
 const Game: React.FC = () => {
@@ -24,6 +32,7 @@ const Game: React.FC = () => {
   const [score, setScore] = useState(0);
   const [pointsMessage, setPointsMessage] = useState<string | null>(null);
   const [gameOver, setGameOver] = useState(false);
+  const [topThree, setTopThree] = useState<Score[]>([]); // State to hold top 3 players
 
   useEffect(() => {
     const ws = new WebSocket("ws://localhost:8000/ws");
@@ -53,7 +62,6 @@ const Game: React.FC = () => {
       if (data.event === "question") {
         setQuestion(data.question);
       } else if (data.event === "time") {
-        console.log("time: ", data.time);
         setTime(data.time);
       } else if (data.event === "time_up") {
         handleTimeUp();
@@ -61,6 +69,14 @@ const Game: React.FC = () => {
         handleAnswerResult(data);
       } else if (data.event === "game_over") {
         handleGameOver(data);
+      } else if (data.event === "ranking_update") {
+        handleRankingUpdate(data.ranking); // Handle ranking updates
+      } else if (
+        data.event === "error" &&
+        data.message === "Token has expired"
+      ) {
+        localStorage.removeItem("token");
+        navigate("/signup");
       }
     };
 
@@ -73,8 +89,18 @@ const Game: React.FC = () => {
     };
   }, [token]);
 
+  const handleRankingUpdate = (scores: Score[]) => {
+    const topThreePlayers = scores
+      .map((e: any) => ({
+        username: e.user_email,
+        score: e.score,
+        position: e.position,
+      }))
+      .slice(0, 3);
+    setTopThree(topThreePlayers); // Update top 3 players
+  };
+
   const handleAnswer = async (answer: string) => {
-    console.log("answer: ", answer);
     socket?.send(
       JSON.stringify({
         event: "answer",
@@ -88,33 +114,26 @@ const Game: React.FC = () => {
 
   const handleAnswerResult = (data: any) => {
     if (data.correct) {
-      setPointsMessage(`+${data.score - score}pts`);
+      setPointsMessage(`+${data.score}pts`);
       setScore(data.score);
     } else {
       setPointsMessage(`0pts`);
     }
-    setTimeout(() => setPointsMessage(null), 2000); // Clear the message after 2 seconds
+    setTimeout(() => setPointsMessage(null), 2000);
   };
 
   const handleGameOver = (data: any) => {
-    if (data.correct) {
-      setScore((prevScore) => data.score);
-      setPointsMessage(`+${data.points}pts`);
-    } else {
-      // setPointsMessage(`0pts`);
-    }
     setGameOver(true);
-    setTimeout(() => setPointsMessage(null), 2000); // Clear the message after 2 seconds
+    setTimeout(() => setPointsMessage(null), 2000);
   };
 
   const handleTimeUp = async () => {
     setTime(0);
-    // maybe close connection
   };
 
   const getTimeColor = useMemo(() => {
     if (time > 20) {
-      return colors.lightTurquoise;
+      return "lime";
     } else if (time > 10) {
       return colors.neonYellow;
     } else if (time > 1) {
@@ -130,54 +149,57 @@ const Game: React.FC = () => {
             <PointsMessage show={!!pointsMessage && !gameOver}>
               {pointsMessage}
             </PointsMessage>
-          )}{" "}
+          )}
           <LeftPanel>
             <QuestionCard>
-              <Image
-                src={`http://localhost:8000/${question?.image_url?.slice(4)}`}
-                alt="question"
+              <ChessboardReveal
+                imageUrl={`http://localhost:8000/${question?.image_url?.slice(
+                  4
+                )}`}
               />
             </QuestionCard>
           </LeftPanel>
           <RightPanel>
-            <UserCard>
-              <Avatar
-                src="https://avatars.githubusercontent.com/u/13066412?v=4"
-                alt="User Avatar"
-              />
-              <Info>
-                <h2>{user.username}</h2>
-                <ScoreText>Score: {score || 0}</ScoreText>
-                <TimeDisplay color={getTimeColor}>⏰ Time: {time}s</TimeDisplay>
-                <Category>Category: {question.category}</Category>
-              </Info>
-            </UserCard>
-            <UserCard>
-              <OptionPanel>
-                <OptionPanelTitle>
-                  🤔 What's the image meaning?
-                </OptionPanelTitle>
-                <Answers>
-                  {question?.options?.map((answer, index) => (
-                    <AnswerButton
-                      key={`${index}-${question}`}
-                      onClick={() => handleAnswer(answer)}
-                      // disabled={!!selectedAnswer}
-                    >
-                      {answer?.split("/")[1].toLowerCase()}
-                    </AnswerButton>
-                  ))}
-                </Answers>
-              </OptionPanel>
-            </UserCard>
+            <RightPanelTop>
+              <UserCard>
+                <Avatar userName={user.user || "example"} />
+                <Info>
+                  {/* <h2>{user.user}</h2> */}
+                  <ScoreText>Score: {score || 0}</ScoreText>
+                  <TimeDisplay color={getTimeColor}>Time: {time}s</TimeDisplay>
+                  <Category>Category: {question.category}</Category>
+                </Info>
+              </UserCard>
+              <OptionsCard>
+                <OptionPanel>
+                  <OptionPanelTitle>What's the image meaning?</OptionPanelTitle>
+                  <Answers>
+                    {question?.options?.map((answer, index) => (
+                      <AnswerButton
+                        key={`${index}-${question}`}
+                        onClick={() => handleAnswer(answer)}
+                      >
+                        {answer?.split("/")[1].toLowerCase()}
+                      </AnswerButton>
+                    ))}
+                  </Answers>
+                </OptionPanel>
+              </OptionsCard>
+            </RightPanelTop>
+
+            {topThree.length > 0 && <Podium topThree={topThree} />}
           </RightPanel>
         </>
       )}
       {(time === 0 || gameOver) && (
         <Modal>
           <ModalContent>
-            <GameOver>🎉 Game Over! 🎉</GameOver>
-            <Button onClick={() => navigate("/ranking")}>Go to Ranking</Button>
+            <GameOver> Game Over </GameOver>
+            <ScoreBox score={score || 0} />
+            <GameOverButtonsWrapper>
+              <Button onClick={() => navigate("/signup")}> Login </Button>
+              <Button onClick={() => navigate("/ranking")}> Ranking</Button>
+            </GameOverButtonsWrapper>
           </ModalContent>
         </Modal>
       )}
@@ -187,82 +209,113 @@ const Game: React.FC = () => {
 
 export default Game;
 
+const GameOverButtonsWrapper = styled.div`
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem; // Small gap between the buttons
+
+  & > button {
+    flex: 1; // Each button takes up an equal portion of the available space
+  }
+`;
 const Container = styled.div`
   height: 100vh;
+  width: 100vw;
   display: flex;
-  background-color: ${colors.blackGray};
+  justify-content: space-between; /* Space between LeftPanel and RightPanel */
+  align-items: flex-start; /* Aligns children at the top */
+  background-color: ${colors.washedBlue};
+  background-repeat: no-repeat;
+  background-size: 100%; /* Scale down the SVG */
+  background-position: center;
   color: ${colors.white};
 `;
 
 const LeftPanel = styled.div`
-  flex: 2;
+  flex-grow: 1; /* Allows LeftPanel to grow as much as possible */
   display: flex;
-  justify-content: center;
-  align-items: center;
+
+  width: 100%; /* Ensure it takes full width available */
+  max-width: 100vh; /* Limits the width to maintain a square shape */
+  aspect-ratio: 1; /* Maintains square aspect ratio */
+  padding: 1rem;
+  background-color: ${colors.washedBlue}; /* Optional: for visibility */
 `;
 
 const RightPanel = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: space-between;
+  padding: 1rem;
+  height: 100vh;
+`;
+
+const RightPanelTop = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   align-items: space-between;
-  padding: 2rem;
+  // padding: 1rem;
+  gap: 1rem;
 `;
 
 const TimeDisplay = styled.span<{ color: string }>`
   font-size: 2rem;
   color: ${(props) => props.color};
+  background-color: #${colors.deepBlue};
+  padding: 10px;
+  border-radius: 16px;
 `;
 
 const OptionPanel = styled.div`
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  margin-bottom: 5rem;
   justify-content: space-between;
   align-items: space-between;
-  height: 60vh;
 `;
 
-const OptionPanelTitle = styled.h1``;
+const OptionPanelTitle = styled.h1`
+  color: ${colors.lightTurquoise};
+`;
 
 const QuestionCard = styled.div`
-  background-color: ${colors.coolGray};
+  background-color: ${colors.tourqueesePale};
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  padding: 1rem;
-  border-radius: 8px;
-`;
-
-const Image = styled.img`
-  max-width: 100%;
-  height: 90vh;
-  border-radius: 8px;
+  padding: 12px;
+  margin: 1rem;
+  border-radius: 16px;
+  display: flex;
+  justify-content: center;
+  margin: auto;
 `;
 
 const UserCard = styled.div`
-  background-color: ${colors.coolGray};
+  background-color: ${colors.tourqueeseStrong};
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   padding: 1rem;
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+`;
+
+const OptionsCard = styled.div`
+  // background-color: ${colors.coolGray};
+  // box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  // padding: 1rem;
   border-radius: 8px;
   display: flex;
   align-items: center;
   margin-bottom: 1rem;
 `;
 
-const Avatar = styled.img`
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  margin-right: 1rem;
-  border-color: solid 2px pink;
-`;
-
 const Info = styled.div`
   display: flex;
   gap: 0.2rem;
   flex-direction: column;
+  color: #${colors.deepBlue};
 
   h2 {
     margin: 0;
@@ -272,9 +325,11 @@ const Info = styled.div`
 const ScoreText = styled.span`
   font-family: "VIDEOPHREAK", sans-serif;
   font-size: 2rem;
+  color: #${colors.deepBlue};
 `;
 
 const Category = styled.span`
+  color: #${colors.deepBlue};
   font-weight: bold;
   font-size: 1rem;
 `;
@@ -282,7 +337,7 @@ const Category = styled.span`
 const Answers = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.5rem;
   margin-bottom: 1rem;
 `;
 
@@ -296,6 +351,7 @@ const AnswerButton = styled.button`
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  width: 565px;
 
   &:hover {
     background-color: ${colors.neonTurquoise}; // Hover background color
@@ -314,35 +370,40 @@ const Modal = styled.div`
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5); // Semi-transparent background
   z-index: 1000;
 `;
 
 const ModalContent = styled.div`
-  background-color: ${colors.blackGray}; // Dark background
   color: ${colors.offWhite}; // Light text color
-  padding: 2rem;
+  background-color: ${colors.graffito}E6; // Dark background
+
+  padding: 1rem 0 2rem 0;
   text-align: center;
-  border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  max-width: 500px;
-  width: 90%;
   position: relative;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: stretch;
+  align-items: center;
+  gap: 1rem;
+
+  & > * {
+    width: 27%; // Ensures all child elements have the same width
+  }
 `;
 
 const GameOver = styled.h1`
-  font-size: 2rem;
-  margin-bottom: 1.5rem;
-  color: ${colors.neonTurquoise}; // Accent color
+  font-size: 1.7rem;
+  color: ${colors.white}; // Accent color
 `;
 
 export const Button = styled.button`
   padding: 0.75rem 1.5rem;
   font-size: 1.1rem;
   cursor: pointer;
-  background-color: ${colors.lightTurquoise}; // Button background
+  background-color: ${colors.tourqueeseBright}; // Button background
   color: ${colors.blackGray}; // Button text color
   border: none;
   border-radius: 8px;
