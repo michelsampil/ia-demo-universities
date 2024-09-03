@@ -2,12 +2,26 @@ from fastapi import APIRouter, Request, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.schemas.auth import Token, UserCreate, UserLogin
-from app.crud.auth import login_or_create_user
 from app.core.security import create_access_token
 from app.models.user import User
 from pydantic import ValidationError
+import os
 
 router = APIRouter()
+
+def backup_user_to_file(user: User, filename: str = "user_backup.txt"):
+    """Backup user information to a text file."""
+    backup_dir = "backups"
+    if not os.path.exists(backup_dir):
+        os.makedirs(backup_dir)
+        
+    file_path = os.path.join(backup_dir, filename)
+    
+    with open(file_path, "a") as f:
+        f.write(f"User: {user.full_name}, Email: {user.email}, "
+                f"Degree Program: {user.degree_program}, "
+                f"Academic Year: {user.academic_year}\n")
+    print(f"User data backed up to {file_path}")
 
 @router.post("/signup", response_model=Token)
 async def login_or_sign_up(request: Request, db: Session = Depends(get_db)):
@@ -42,10 +56,21 @@ async def login_or_sign_up(request: Request, db: Session = Depends(get_db)):
             db.add(new_user)
             db.commit()
             db.refresh(new_user)
+            
+            # Backup user data to a text file
+            backup_user_to_file(new_user)
+            
             access_token = create_access_token(data={"user": new_user.email})
             return {"access_token": access_token, "token_type": "bearer"}
 
-    except: raise HTTPException(
-        status_code=400,
-        detail="User not found or no sufficient data to create a new user."
-    )
+    except ValidationError as e:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid data provided."
+        )
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        raise HTTPException(
+            status_code=400,
+            detail="User not found or no sufficient data to create a new user."
+        )
