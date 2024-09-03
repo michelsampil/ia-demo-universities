@@ -26,7 +26,7 @@ class GameHandler:
         self.current_question: Dict[str, str] = {}
         self.question_times: Dict[str, int] = {}  # Track remaining time per user
         self.first_question_time = 60  # Initial time for the first question
-        self.time_decrement = 1  # Time decrement for each correct answer
+        self.time_decrement = 2  # Time decrement for each correct answer
         self.time_update_interval = 1  # Time update interval in seconds
         self.connected_clients: Set[WebSocket] = set()  # Track connected clients
 
@@ -128,6 +128,11 @@ class GameHandler:
     async def handle_answer(self, websocket: WebSocket, user_email: str, answer: str):
         correct_question = self.current_question.get(user_email)
         print(f"🍌 correct_question: {correct_question}, answer: {answer}")
+        
+        if user_email not in self.user_scores:
+            self.user_scores[user_email] = 0  # Initialize score if it doesn't exist
+
+        
         if answer == correct_question:
             self.user_scores[user_email] = self.user_scores.get(user_email, 0) + 1
             self.first_question_time = max(10, self.first_question_time - self.time_decrement)
