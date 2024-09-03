@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import api from "../services/api";
 import styled from "styled-components";
+import { Container } from "./Home";
+import { colors } from "../styles/colors";
 
 interface Score {
   username: string;
@@ -19,7 +21,7 @@ const Ranking: React.FC = () => {
         const userScores: Score[] = response.data.map((e: any) => ({
           username: e.user_email,
           score: e.value,
-          timestamp: e.timestamp, // Updated to use timestamp
+          timestamp: e.timestamp,
           position: e.position,
         }));
         setScores(userScores);
@@ -30,17 +32,15 @@ const Ranking: React.FC = () => {
 
     fetchScores();
 
-    // WebSocket connection for ranking updates
-    const socket = new WebSocket("ws://localhost:8000/ws"); // replace with your WebSocket server URL
+    const socket = new WebSocket("ws://localhost:8000/ws");
 
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log("Message received:", data);
       if (data.event === "ranking_update") {
         const updatedScores: Score[] = data.ranking.map((e: any) => ({
           username: e.user_email,
           score: e.score,
-          timestamp: e.timestamp, // Updated to use timestamp
+          timestamp: e.timestamp,
           position: e.position,
         }));
         setScores(updatedScores);
@@ -58,93 +58,97 @@ const Ranking: React.FC = () => {
 
   return (
     <Container>
-      <Title>🏆 Ranking 🏆</Title>
-      <Table>
-        <thead>
-          <tr>
-            <th>Position</th>
-            <th>User</th>
-            <th>Score</th>
-            <th>Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          {scores.map((score) => {
-            let medalEmoji = "";
-            if (score.position === 1) medalEmoji = "🥇";
-            else if (score.position === 2) medalEmoji = "🥈";
-            else if (score.position === 3) medalEmoji = "🥉";
+      <RankingContainer>
+        <Title> Ranking </Title>
+        <StyledTable>
+          <thead>
+            <tr>
+              <th>Position</th>
+              <th>User</th>
+              <th>Score</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {scores.map((score) => {
+              let medalEmoji = "";
+              if (score.position === 1) medalEmoji = "🥇";
+              else if (score.position === 2) medalEmoji = "🥈";
+              else if (score.position === 3) medalEmoji = "🥉";
 
-            return (
-              <tr key={score?.position}>
-                <td>
-                  {score?.position} {medalEmoji}
-                </td>
-                <td>{score?.username}</td>
-                <td style={{ color: colors.lightTurquoise }}>{score.score}</td>
-                <td>{new Date(score.timestamp).toLocaleString()}</td>{" "}
-                {/* Updated to display timestamp */}
-              </tr>
-            );
-          })}
-        </tbody>
-      </Table>
+              return (
+                <tr key={score.position}>
+                  <td>
+                    {score.position} {medalEmoji}
+                  </td>
+                  <td>{score.username}</td>
+                  <ScoreValue>{score.score}</ScoreValue>
+                  <td>
+                    {new Date(score.timestamp).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: true,
+                    })}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </StyledTable>
+      </RankingContainer>
     </Container>
   );
 };
 
 export default Ranking;
 
-const colors = {
-  coolGray: "#314550",
-  gray: "#1A1A1A",
-  darkGray: "#0B0D0E",
-  white: "#FFFFFF",
-  offWhite: "#F4F3F0",
-  lightTurquoise: "#00EDED",
-  neonTurquoise: "#A2F3F3",
-  washedBlue: "#053057",
-  blackGray: "#252525",
-  neonRed: "#FF073A",
-  neonPink: "#FF66B2",
-  neonGreen: "#39FF14",
-  neonYellow: "#FFFF33",
-};
-
-const Container = styled.div`
+const RankingContainer = styled.div`
   height: 100vh;
   padding: 2rem;
-  background-color: ${colors.blackGray};
-  color: ${colors.white};
 `;
 
 const Title = styled.h1`
   text-align: center;
   margin-bottom: 2rem;
-  color: ${colors.neonTurquoise};
+  color: ${colors.tourqueeseBright};
 `;
 
-const Table = styled.table`
+const StyledTable = styled.table`
   width: 100%;
   border-collapse: collapse;
+  border-radius: 16px;
+  overflow: hidden; /* Ensures the border-radius is applied to the entire table */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
 
   th,
   td {
-    border: 1px solid ${colors.gray};
-    padding: 8px;
+    padding: 12px;
     text-align: center;
+    color: ${colors.washedBlue};
   }
 
   th {
-    background-color: ${colors.coolGray};
-    color: ${colors.white};
+    background-color: ${colors.tourqueeseMid};
+    color: ${colors.washedBlue};
   }
 
   tr:nth-child(odd) {
-    background-color: ${colors.darkGray};
+    background-color: ${colors.lightTurquoise};
   }
 
   tr:nth-child(even) {
-    background-color: ${colors.blackGray};
+    background-color: ${colors.tourqueeseMid};
   }
+
+  /* Highlight row on hover */
+  tr:hover {
+    background-color: ${colors.tourqueeseBright}; /* Brighter background on hover */
+    border: 2px solid ${colors.lightTurquoise}; /* Light border to create a glowing effect */
+    box-shadow: 0 0 8px ${colors.lightTurquoise}; /* Glow effect around the row */
+  }
+`;
+
+const ScoreValue = styled.td`
+  color: ${colors.lightTurquoise};
+  font-weight: bold;
 `;

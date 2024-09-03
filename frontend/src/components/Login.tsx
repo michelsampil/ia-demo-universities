@@ -10,10 +10,12 @@ import { Input } from "./form/Input";
 import { Footer } from "./form/Footer";
 import { Subtitle } from "./form/Subtitle";
 import { Title } from "./form/Title";
+import { useNavigate } from "react-router-dom";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const { login } = useContext(AuthContext)!;
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,6 +25,7 @@ const Login: React.FC = () => {
       });
 
       login(response.data.access_token);
+      navigate("/");
     } catch (error) {
       console.error("Login failed", error);
     }

@@ -2,6 +2,7 @@ export const colors = {
   coolGray: "#314550",
   gray: "#1A1A1A",
   darkGray: "#0B0D0E",
+  graffito: "#041627",
   white: "#FFFFFF",
   offWhite: "#F4F3F0",
   lightTurquoise: "#00EDED",
@@ -15,4 +16,6 @@ export const colors = {
   tourqueeseStrong: "#01ECED",
   tourqueeseMid: "#5FFEFF",
   tourqueesePale: "#A2F3F3",
+  tourqueeseBright: "#1DF4F4",
+  deepBlue: "053057",
 };

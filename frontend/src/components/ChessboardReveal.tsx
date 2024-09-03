@@ -9,8 +9,8 @@ interface ChessboardRevealProps {
 
 const ImageContainer = styled.div<{ rows: number; cols: number }>`
   position: relative;
-  width: 500px;
-  height: 500px;
+  width: 44rem;
+  height: 44rem;
   display: grid;
   grid-template-columns: repeat(${(props) => props.cols}, 1fr);
   grid-template-rows: repeat(${(props) => props.rows}, 1fr);

@@ -52,9 +52,8 @@ const PodiumContainer = styled.div`
   display: flex;
   align-items: flex-end;
   padding: 2rem;
-  background-color: ${colors.coolGray};
+  background-color: ${colors.washedBlue};
   border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 `;
 
 const PodiumPlace = styled.div<{ position?: number }>`

@@ -7,6 +7,7 @@ import { colors } from "../styles/colors";
 import { StyledCard } from "./Card";
 import ChessboardReveal from "./ChessboardReveal";
 import Podium from "./Podium"; // Import the Podium component
+import ScoreBox from "./ScoreBox";
 
 interface Question {
   id: number;
@@ -171,7 +172,7 @@ const Game: React.FC = () => {
                 <Category>Category: {question.category}</Category>
               </Info>
             </UserCard>
-            <UserCard>
+            <OptionsCard>
               <OptionPanel>
                 <OptionPanelTitle>What's the image meaning?</OptionPanelTitle>
                 <Answers>
@@ -185,7 +186,7 @@ const Game: React.FC = () => {
                   ))}
                 </Answers>
               </OptionPanel>
-            </UserCard>
+            </OptionsCard>
             {topThree.length > 0 && <Podium topThree={topThree} />}
           </RightPanel>
         </>
@@ -193,8 +194,12 @@ const Game: React.FC = () => {
       {(time === 0 || gameOver) && (
         <Modal>
           <ModalContent>
-            <GameOver>🎉 Game Over! 🎉</GameOver>
-            <Button onClick={() => navigate("/ranking")}>Go to Ranking</Button>
+            <GameOver> Game Over </GameOver>
+            <ScoreBox score={score || 0} />
+            <GameOverButtonsWrapper>
+              <Button onClick={() => navigate("/signup")}> Login </Button>
+              <Button onClick={() => navigate("/ranking")}> Ranking</Button>
+            </GameOverButtonsWrapper>
           </ModalContent>
         </Modal>
       )}
@@ -204,11 +209,31 @@ const Game: React.FC = () => {
 
 export default Game;
 
+const GameOverButtonsWrapper = styled.div`
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem; // Small gap between the buttons
+
+  & > button {
+    flex: 1; // Each button takes up an equal portion of the available space
+  }
+`;
+
 const Container = styled.div`
   height: 100vh;
   display: flex;
   background-color: ${colors.blackGray};
   color: ${colors.white};
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
+  background-color: ${colors.washedBlue};
+  background-repeat: no-repeat;
+  background-size: 100%; /* Scale down the SVG */
+  background-position: center;
 `;
 
 const LeftPanel = styled.div`
@@ -240,24 +265,30 @@ const OptionPanel = styled.div`
   align-items: space-between;
 `;
 
-const OptionPanelTitle = styled.h1``;
-
-const QuestionCard = styled.div`
-  background-color: ${colors.coolGray};
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  padding: 1rem;
-  border-radius: 8px;
+const OptionPanelTitle = styled.h1`
+  color: ${colors.lightTurquoise};
 `;
 
-const Image = styled.img`
-  max-width: 100%;
-  height: 90vh;
-  border-radius: 8px;
+const QuestionCard = styled.div`
+  background-color: ${colors.tourqueesePale};
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  padding: 12px;
+  border-radius: 16px;
 `;
 
 const UserCard = styled.div`
-  background-color: ${colors.coolGray};
+  background-color: ${colors.tourqueesePale};
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  padding: 1rem;
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+`;
+
+const OptionsCard = styled.div`
+  // background-color: ${colors.coolGray};
+  // box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   padding: 1rem;
   border-radius: 8px;
   display: flex;
@@ -330,35 +361,40 @@ const Modal = styled.div`
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5); // Semi-transparent background
   z-index: 1000;
 `;
 
 const ModalContent = styled.div`
-  background-color: ${colors.blackGray}; // Dark background
   color: ${colors.offWhite}; // Light text color
-  padding: 2rem;
+  background-color: ${colors.graffito}E6; // Dark background
+
+  padding: 1rem 0 2rem 0;
   text-align: center;
-  border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  max-width: 500px;
-  width: 90%;
   position: relative;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: stretch;
+  align-items: center;
+  gap: 1rem;
+
+  & > * {
+    width: 27%; // Ensures all child elements have the same width
+  }
 `;
 
 const GameOver = styled.h1`
-  font-size: 2rem;
-  margin-bottom: 1.5rem;
-  color: ${colors.neonTurquoise}; // Accent color
+  font-size: 1.7rem;
+  color: ${colors.white}; // Accent color
 `;
 
 export const Button = styled.button`
   padding: 0.75rem 1.5rem;
   font-size: 1.1rem;
   cursor: pointer;
-  background-color: ${colors.lightTurquoise}; // Button background
+  background-color: ${colors.tourqueeseBright}; // Button background
   color: ${colors.blackGray}; // Button text color
   border: none;
   border-radius: 8px;
