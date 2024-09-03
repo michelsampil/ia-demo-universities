@@ -82,7 +82,6 @@ export default Podium;
 const PodiumContainer = styled.div`
   display: flex;
   align-items: flex-end;
-  padding: 2rem;
   background-color: ${colors.washedBlue};
   border-radius: 8px;
   position: relative; /* Ensure confetti is visible within the container */
@@ -97,7 +96,7 @@ const PodiumPlace = styled.div<{ position?: number }>`
   height: ${(props) => {
     if (props.position === 1) return "220px";
     if (props.position === 2) return "170px";
-    if (props.position === 3) return "120px";
+    if (props.position === 3) return "140px";
     return "150px"; // Default height for undefined positions
   }};
   background-color: ${(props) => {

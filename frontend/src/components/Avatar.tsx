@@ -269,13 +269,13 @@ interface StyledAvatarProps {
 }
 
 const StyledAvatar = styled.img<StyledAvatarProps>`
-  width: 90px;
-  height: 90px;
+  width: 110px;
+  height: 110px;
   border-radius: 50%;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   margin-right: 1rem;
   background: ${({ borderColor }) => borderColor};
-  border: solid 5px black;
+  border: solid 3px white;
 `;
 
 interface AvatarProps {

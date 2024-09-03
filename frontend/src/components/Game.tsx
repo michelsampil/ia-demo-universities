@@ -133,7 +133,7 @@ const Game: React.FC = () => {
 
   const getTimeColor = useMemo(() => {
     if (time > 20) {
-      return colors.lightTurquoise;
+      return "lime";
     } else if (time > 10) {
       return colors.neonYellow;
     } else if (time > 1) {
@@ -160,30 +160,33 @@ const Game: React.FC = () => {
             </QuestionCard>
           </LeftPanel>
           <RightPanel>
-            <UserCard>
-              <Avatar userName={user.user || "example"} />
-              <Info>
-                <h2>{user.user}</h2>
-                <ScoreText>Score: {score || 0}</ScoreText>
-                <TimeDisplay color={getTimeColor}>Time: {time}s</TimeDisplay>
-                <Category>Category: {question.category}</Category>
-              </Info>
-            </UserCard>
-            <OptionsCard>
-              <OptionPanel>
-                <OptionPanelTitle>What's the image meaning?</OptionPanelTitle>
-                <Answers>
-                  {question?.options?.map((answer, index) => (
-                    <AnswerButton
-                      key={`${index}-${question}`}
-                      onClick={() => handleAnswer(answer)}
-                    >
-                      {answer?.split("/")[1].toLowerCase()}
-                    </AnswerButton>
-                  ))}
-                </Answers>
-              </OptionPanel>
-            </OptionsCard>
+            <RightPanelTop>
+              <UserCard>
+                <Avatar userName={user.user || "example"} />
+                <Info>
+                  {/* <h2>{user.user}</h2> */}
+                  <ScoreText>Score: {score || 0}</ScoreText>
+                  <TimeDisplay color={getTimeColor}>Time: {time}s</TimeDisplay>
+                  <Category>Category: {question.category}</Category>
+                </Info>
+              </UserCard>
+              <OptionsCard>
+                <OptionPanel>
+                  <OptionPanelTitle>What's the image meaning?</OptionPanelTitle>
+                  <Answers>
+                    {question?.options?.map((answer, index) => (
+                      <AnswerButton
+                        key={`${index}-${question}`}
+                        onClick={() => handleAnswer(answer)}
+                      >
+                        {answer?.split("/")[1].toLowerCase()}
+                      </AnswerButton>
+                    ))}
+                  </Answers>
+                </OptionPanel>
+              </OptionsCard>
+            </RightPanelTop>
+
             {topThree.length > 0 && <Podium topThree={topThree} />}
           </RightPanel>
         </>
@@ -215,43 +218,55 @@ const GameOverButtonsWrapper = styled.div`
     flex: 1; // Each button takes up an equal portion of the available space
   }
 `;
-
 const Container = styled.div`
   height: 100vh;
-  display: flex;
-  background-color: ${colors.blackGray};
-  color: ${colors.white};
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
   width: 100vw;
+  display: flex;
+  justify-content: space-between; /* Space between LeftPanel and RightPanel */
+  align-items: flex-start; /* Aligns children at the top */
   background-color: ${colors.washedBlue};
   background-repeat: no-repeat;
   background-size: 100%; /* Scale down the SVG */
   background-position: center;
+  color: ${colors.white};
 `;
 
 const LeftPanel = styled.div`
-  flex: 1.35;
+  flex-grow: 1; /* Allows LeftPanel to grow as much as possible */
   display: flex;
-  justify-content: center;
-  align-items: center;
+
+  width: 100%; /* Ensure it takes full width available */
+  max-width: 100vh; /* Limits the width to maintain a square shape */
+  aspect-ratio: 1; /* Maintains square aspect ratio */
+  padding: 1rem;
+  background-color: ${colors.washedBlue}; /* Optional: for visibility */
 `;
 
 const RightPanel = styled.div`
-  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   align-items: space-between;
   padding: 1rem;
+  height: 100vh;
+`;
+
+const RightPanelTop = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: space-between;
+  // padding: 1rem;
+  gap: 1rem;
 `;
 
 const TimeDisplay = styled.span<{ color: string }>`
   font-size: 2rem;
   color: ${(props) => props.color};
+  background-color: #${colors.deepBlue};
+  padding: 10px;
+  border-radius: 16px;
 `;
 
 const OptionPanel = styled.div`
@@ -270,24 +285,26 @@ const QuestionCard = styled.div`
   background-color: ${colors.tourqueesePale};
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   padding: 12px;
+  margin: 1rem;
   border-radius: 16px;
+  display: flex;
+  justify-content: center;
+  margin: auto;
 `;
 
 const UserCard = styled.div`
-  background-color: ${colors.tourqueesePale};
+  background-color: ${colors.tourqueeseStrong};
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   padding: 1rem;
   border-radius: 30px;
   display: flex;
   align-items: center;
-  margin-bottom: 1rem;
-  margin-top: 20px;
 `;
 
 const OptionsCard = styled.div`
   // background-color: ${colors.coolGray};
   // box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  padding: 1rem;
+  // padding: 1rem;
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -298,6 +315,7 @@ const Info = styled.div`
   display: flex;
   gap: 0.2rem;
   flex-direction: column;
+  color: #${colors.deepBlue};
 
   h2 {
     margin: 0;
@@ -307,9 +325,11 @@ const Info = styled.div`
 const ScoreText = styled.span`
   font-family: "VIDEOPHREAK", sans-serif;
   font-size: 2rem;
+  color: #${colors.deepBlue};
 `;
 
 const Category = styled.span`
+  color: #${colors.deepBlue};
   font-weight: bold;
   font-size: 1rem;
 `;
