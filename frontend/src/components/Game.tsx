@@ -8,7 +8,7 @@ import { StyledCard } from "./Card";
 import ChessboardReveal from "./ChessboardReveal";
 import Podium from "./Podium"; // Import the Podium component
 import ScoreBox from "./ScoreBox";
-
+import Avatar from "./Avatar";
 interface Question {
   id: number;
   image_url: string;
@@ -161,12 +161,9 @@ const Game: React.FC = () => {
           </LeftPanel>
           <RightPanel>
             <UserCard>
-              <Avatar
-                src="https://avatars.githubusercontent.com/u/13066412?v=4"
-                alt="User Avatar"
-              />
+              <Avatar userName={user.user || "example"} />
               <Info>
-                <h2>{user.username}</h2>
+                <h2>{user.user}</h2>
                 <ScoreText>Score: {score || 0}</ScoreText>
                 <TimeDisplay color={getTimeColor}>Time: {time}s</TimeDisplay>
                 <Category>Category: {question.category}</Category>
@@ -295,15 +292,6 @@ const OptionsCard = styled.div`
   display: flex;
   align-items: center;
   margin-bottom: 1rem;
-`;
-
-const Avatar = styled.img`
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  margin-right: 1rem;
-  border-color: solid 2px pink;
 `;
 
 const Info = styled.div`
