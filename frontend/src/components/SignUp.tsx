@@ -2,7 +2,7 @@ import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import api from "../services/api";
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
 import { colors } from "../styles/colors";
 import { BlendIcon } from "./BlendIcon";
 import { Container } from "./Container";
@@ -21,9 +21,10 @@ const SignUp: React.FC = () => {
   const [degreeProgram, setDegreeProgram] = useState<string>("");
   const [customDegreeProgram, setCustomDegreeProgram] = useState<string>("");
   const [academicYear, setAcademicYear] = useState<number | "">("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { login } = useContext(AuthContext)!;
-  const navigate = useNavigate(); // Initialize useNavigate
+  const navigate = useNavigate();
 
   const ORTDegreeTypes: string[] = [
     "CARRERAS UNIVERSITARIAS - INGENIERIA",
@@ -81,11 +82,11 @@ const SignUp: React.FC = () => {
       });
 
       login(response.data.access_token);
-
-      // Redirect to home on successful login
       navigate("/");
     } catch (error) {
-      console.error("Login failed", error);
+      setErrorMessage(
+        "Can't sign up. Please check if you are already registered."
+      );
     }
   };
 
@@ -191,10 +192,34 @@ const SignUp: React.FC = () => {
           <Link href="/login">Log in</Link>
         </Footer>
         <BlendIcon />
+        {errorMessage && <Toast>{errorMessage}</Toast>}
       </Form>
     </Container>
   );
 };
+
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const Toast = styled.div`
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: ${colors.neonRed};
+  color: ${colors.white};
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  animation: ${fadeIn} 0.3s ease-in-out;
+`;
 
 export const Select = styled.select`
   color: ${colors.coolGray};
@@ -204,8 +229,8 @@ export const Select = styled.select`
   border-radius: 16px;
   outline: none;
   transition: border-color 0.3s ease;
-  appearance: none; /* Remove default arrow */
-  background: none; /* Remove default background */
+  appearance: none;
+  background: none;
   width: 100%;
   background: white;
 

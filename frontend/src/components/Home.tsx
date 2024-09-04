@@ -27,7 +27,7 @@ const Home: React.FC = () => {
         </ButtonContainer>
       </ColumnWrapper>
       <Footer>
-        <BlendIconLight />
+        <BlendIconLightStyled />
       </Footer>
     </Container>
   );
@@ -36,7 +36,7 @@ const Home: React.FC = () => {
 export default Home;
 
 export const Container = styled.div`
-  // display: flex;
+  position: relative;
   justify-content: flex-start;
   align-items: center;
   height: 100vh;
@@ -110,8 +110,19 @@ const StartButton = styled.button`
 `;
 
 const Footer = styled.footer`
-  display: flex;
+  position: absolute;
+  bottom: 0;
+  right: 0;
   width: 100vw;
   height: 10vh;
+  display: flex;
   justify-content: flex-end;
+`;
+
+const BlendIconLightStyled = styled(BlendIconLight)`
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  width: 270px;
+  height: 3rem;
 `;

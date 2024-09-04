@@ -4,6 +4,7 @@ import styled from "styled-components";
 import { Container } from "./Home";
 import { colors } from "../styles/colors";
 import Confetti from "react-confetti";
+import { useNavigate } from "react-router-dom";
 
 import goldMedal from "../assets/images/gold-medal.png";
 import silverMedal from "../assets/images/plate-medal.png";
@@ -19,6 +20,7 @@ interface Score {
 const Ranking: React.FC = () => {
   const [scores, setScores] = useState<Score[]>([]);
   const [confettiAmount, setConfettiAmount] = useState(1200);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchScores = async () => {
@@ -62,7 +64,10 @@ const Ranking: React.FC = () => {
     };
   }, []);
 
-  console.log("confeti", confettiAmount);
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
 
   return (
     <Container>
@@ -74,8 +79,11 @@ const Ranking: React.FC = () => {
         tweenDuration={30000}
       />
 
-      <RankingContainer>
+      <Header>
         <Title>Ranking</Title>
+      </Header>
+
+      <RankingContainer>
         <StyledTable>
           <thead>
             <tr>
@@ -121,11 +129,25 @@ const Ranking: React.FC = () => {
           </tbody>
         </StyledTable>
       </RankingContainer>
+
+      <LogoutButton onClick={handleLogout}>Logout ←</LogoutButton>
     </Container>
   );
 };
 
 export default Ranking;
+
+const Header = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem 2rem;
+`;
+
+const Title = styled.h1`
+  text-align: center;
+  color: ${colors.tourqueeseBright};
+`;
 
 const PositionCell = styled.div`
   display: flex;
@@ -135,14 +157,11 @@ const PositionCell = styled.div`
 `;
 
 const RankingContainer = styled.div`
-  height: 100vh;
   padding: 2rem;
-`;
-
-const Title = styled.h1`
-  text-align: center;
-  margin-bottom: 2rem;
-  color: ${colors.tourqueeseBright};
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 `;
 
 const StyledTable = styled.table`
@@ -182,4 +201,23 @@ const StyledTable = styled.table`
 const ScoreValue = styled.td`
   color: ${colors.lightTurquoise};
   font-weight: bold;
+`;
+
+const LogoutButton = styled.button`
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  padding: 0.5rem 1rem;
+  background-color: ${colors.lightTurquoise};
+  color: ${colors.washedBlue};
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s ease;
+  font-weight: bold;
+
+  &:hover {
+    background-color: ${colors.tourqueeseBright};
+  }
 `;
