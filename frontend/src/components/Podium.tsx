@@ -46,6 +46,12 @@ const Podium: React.FC<PodiumProps> = ({ topThree }) => {
     previousTopThreeRef.current = topThree;
   }, [topThree]);
 
+  const trimUsername = (username: string, maxLength: number) => {
+    return username.length > maxLength
+      ? username.slice(0, maxLength) + "..."
+      : username;
+  };
+
   return (
     <PodiumContainer>
       {showConfetti && (
@@ -69,7 +75,9 @@ const Podium: React.FC<PodiumProps> = ({ topThree }) => {
                 }`}
               />
             </Medal>
-            {user?.username && <Username>{user?.username}</Username>}
+            {user?.username && (
+              <Username>{trimUsername(user.username, 10)}</Username>
+            )}
             <Score>{user?.score} pts</Score>
           </PodiumPlace>
         ))}
@@ -131,6 +139,11 @@ const Medal = styled.div`
 const Username = styled.div`
   font-size: 1.2rem;
   font-weight: bold;
+  max-width: 100%;
+  text-align: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 `;
 
 const Score = styled.div`

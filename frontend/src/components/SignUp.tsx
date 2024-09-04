@@ -189,7 +189,7 @@ const SignUp: React.FC = () => {
         <Button type="submit">Sign up</Button>
         <Footer>
           <span>Already played?</span>
-          <Link href="/login">Log in</Link>
+          <Link to="/login">Log in</Link>
         </Footer>
         <BlendIcon />
         {errorMessage && <Toast>{errorMessage}</Toast>}

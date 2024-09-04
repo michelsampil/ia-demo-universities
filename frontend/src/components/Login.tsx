@@ -75,7 +75,7 @@ const Login: React.FC = () => {
         <Button type="submit">Log in</Button>
         <Footer>
           <p>Don't have an account?</p>
-          <Link href="/signup">Sign up</Link>
+          <Link to="/signup">Sign up</Link>
         </Footer>
         <BlendIcon />
       </Form>
