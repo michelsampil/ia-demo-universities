@@ -39,7 +39,6 @@ const Game: React.FC = () => {
     setSocket(ws);
 
     ws.onopen = () => {
-      console.log("Connected to WebSocket server", token);
       ws.send(
         JSON.stringify({
           event: "authenticate",
@@ -57,7 +56,6 @@ const Game: React.FC = () => {
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log("Message from server:", data);
 
       if (data.event === "question") {
         setQuestion(data.question);
@@ -80,9 +78,7 @@ const Game: React.FC = () => {
       }
     };
 
-    ws.onclose = () => {
-      console.log("WebSocket connection closed");
-    };
+    ws.onclose = () => {};
 
     return () => {
       ws.close();
@@ -114,7 +110,7 @@ const Game: React.FC = () => {
 
   const handleAnswerResult = (data: any) => {
     if (data.correct) {
-      setPointsMessage(`+${data.score}pts`);
+      setPointsMessage(`+${1}pts`);
       setScore(data.score);
     } else {
       setPointsMessage(`0pts`);

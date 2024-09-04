@@ -38,7 +38,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const login = (incommingToken: string) => {
-    console.log("token 123: ", incommingToken);
     localStorage.setItem("token", incommingToken);
     const decodedToken = jwtDecode<DecodedToken>(incommingToken);
     setUser(decodedToken.user);
