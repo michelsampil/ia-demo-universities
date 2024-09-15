@@ -181,6 +181,7 @@ const SignUp: React.FC = () => {
         <Input
           type="number"
           min="1"
+          max="5"
           value={academicYear}
           onChange={(e) => setAcademicYear(Number(e.target.value))}
           placeholder="Current Academic Year"
