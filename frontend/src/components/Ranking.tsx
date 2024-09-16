@@ -66,7 +66,7 @@ const Ranking: React.FC = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    navigate("/login");
+    navigate("/signup");
   };
 
   return (

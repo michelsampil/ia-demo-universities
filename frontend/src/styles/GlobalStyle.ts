@@ -1,4 +1,5 @@
 import { createGlobalStyle } from "styled-components";
+import { colors } from "./colors";
 
 const GlobalStyle = createGlobalStyle`
 @font-face {
@@ -30,6 +31,7 @@ const GlobalStyle = createGlobalStyle`
   }
 
   body {
+    background-color: ${colors.washedBlue};
     font-family: 'PPTelegraf', sans-serif;
   } 
 

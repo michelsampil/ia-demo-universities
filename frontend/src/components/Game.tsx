@@ -342,6 +342,7 @@ const AnswerButton = styled.button`
   font-size: 1.5rem;
   color: white;
   cursor: pointer;
+  color: ${colors.washedBlue};
   background-color: ${colors.lightTurquoise}; // Button background
   border: none;
   border-radius: 8px;
