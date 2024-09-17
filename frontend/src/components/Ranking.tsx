@@ -11,7 +11,8 @@ import silverMedal from "../assets/images/plate-medal.png";
 import bronzeMedal from "../assets/images/bronce-medal.png";
 
 interface Score {
-  username: string;
+  name: string;
+  email: string;
   score: number;
   timestamp: string;
   position: number;
@@ -26,12 +27,15 @@ const Ranking: React.FC = () => {
     const fetchScores = async () => {
       try {
         const response = await api.get("/scores/scores/top/10");
-        const userScores: Score[] = response.data.map((e: any) => ({
-          username: e.user_email,
-          score: e.value,
-          timestamp: e.timestamp,
-          position: e.position,
-        }));
+        const userScores: Score[] = filterScores(
+          response.data.map((e: any) => ({
+            name: e.name,
+            email: e.email,
+            score: e.value,
+            timestamp: e.timestamp,
+            position: e.position,
+          }))
+        );
         setScores(userScores);
       } catch (error) {
         console.error("Failed to fetch scores", error);
@@ -45,12 +49,15 @@ const Ranking: React.FC = () => {
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.event === "ranking_update") {
-        const updatedScores: Score[] = data.ranking.map((e: any) => ({
-          username: e.user_email,
-          score: e.score,
-          timestamp: e.timestamp,
-          position: e.position,
-        }));
+        const updatedScores: Score[] = filterScores(
+          data.ranking.map((e: any) => ({
+            name: e.name,
+            email: e.email,
+            score: e.score,
+            timestamp: e.timestamp,
+            position: e.position,
+          }))
+        );
         setScores(updatedScores);
       }
     };
@@ -69,6 +76,29 @@ const Ranking: React.FC = () => {
     navigate("/signup");
   };
 
+  const filterScores = (scores: Score[]): Score[] => {
+    const uniqueScores = scores
+      .filter((score) => score.name !== "Unknown") // Remove "Unknown" users
+      .reduce((acc: Record<string, Score>, current) => {
+        const existing = acc[current.email];
+        // Keep only the highest score for each user
+        if (!existing || current.score > existing.score) {
+          acc[current.email] = current;
+        }
+        return acc;
+      }, {});
+
+    // Convert object back to an array and sort by score
+    const sortedScores = Object.values(uniqueScores).sort(
+      (a, b) => b.score - a.score
+    );
+
+    // Reassign positions sequentially starting from 1
+    return sortedScores.map((score, index) => ({
+      ...score,
+      position: index + 1,
+    }));
+  };
   return (
     <Container>
       <Confetti
@@ -88,7 +118,8 @@ const Ranking: React.FC = () => {
           <thead>
             <tr>
               <th>Position</th>
-              <th>User</th>
+              <th>Name</th>
+              <th>Email</th>
               <th>Score</th>
               <th>Date</th>
             </tr>
@@ -101,7 +132,7 @@ const Ranking: React.FC = () => {
               else if (score.position === 3) medalImage = bronzeMedal;
 
               return (
-                <tr key={score.position}>
+                <tr key={score.email}>
                   <td>
                     <PositionCell>
                       {score.position}{" "}
@@ -114,7 +145,8 @@ const Ranking: React.FC = () => {
                       )}
                     </PositionCell>
                   </td>
-                  <td>{score.username}</td>
+                  <td>{score.name}</td>
+                  <td>{score.email}</td>
                   <ScoreValue>{score.score}</ScoreValue>
                   <td>
                     {new Date(score.timestamp).toLocaleTimeString([], {

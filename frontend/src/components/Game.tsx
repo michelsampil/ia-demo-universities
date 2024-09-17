@@ -18,7 +18,8 @@ interface Question {
 }
 
 interface Score {
-  username: string;
+  name: string;
+  email: string;
   score: number;
   position: number;
 }
@@ -27,7 +28,7 @@ const Game: React.FC = () => {
   const { token, user } = useContext(AuthContext)!;
   const navigate = useNavigate();
   const [question, setQuestion] = useState<Question | null>(null);
-  const [time, setTime] = useState<number>(30);
+  const [time, setTime] = useState<number>(30); // Ensure default time is 30
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [score, setScore] = useState(0);
   const [pointsMessage, setPointsMessage] = useState<string | null>(null);
@@ -85,14 +86,43 @@ const Game: React.FC = () => {
     };
   }, [token]);
 
+  // Helper function to filter and reassign positions
+  const filterAndReassignPositions = (scores: Score[]): Score[] => {
+    const uniqueScores = scores
+      .filter((score) => score.name !== "Unknown") // Remove "Unknown" users
+      .reduce((acc: Record<string, Score>, current) => {
+        const existing = acc[current.email];
+        // Keep only the highest score for each user
+        if (!existing || current.score > existing.score) {
+          acc[current.email] = current;
+        }
+        return acc;
+      }, {});
+
+    // Convert object back to an array and sort by score
+    const sortedScores = Object.values(uniqueScores).sort(
+      (a, b) => b.score - a.score
+    );
+
+    // Reassign positions sequentially starting from 1
+    return sortedScores.map((score, index) => ({
+      ...score,
+      position: index + 1,
+    }));
+  };
+
   const handleRankingUpdate = (scores: Score[]) => {
-    const topThreePlayers = scores
-      .map((e: any) => ({
-        username: e.user_email,
+    const updatedScores = filterAndReassignPositions(
+      scores.map((e: any) => ({
+        name: e.name,
+        email: e.email,
         score: e.score,
         position: e.position,
       }))
-      .slice(0, 3);
+    );
+
+    const topThreePlayers = updatedScores.slice(0, 3); // Get top 3 players after reassigning positions
+
     setTopThree(topThreePlayers); // Update top 3 players
   };
 
@@ -137,6 +167,14 @@ const Game: React.FC = () => {
     } else return colors.darkGray;
   }, [time]);
 
+  // Handle WebSocket disconnection and navigation to login
+  const handleLogoutAndNavigate = () => {
+    if (socket) {
+      socket.close(); // Close WebSocket connection before navigating
+    }
+    navigate("/signup"); // Navigate to login
+  };
+
   return (
     <Container>
       {question && (
@@ -160,7 +198,6 @@ const Game: React.FC = () => {
               <UserCard>
                 <Avatar userName={user.user || "example"} />
                 <Info>
-                  {/* <h2>{user.user}</h2> */}
                   <ScoreText>Score: {score || 0}</ScoreText>
                   <TimeDisplay color={getTimeColor}>Time: {time}s</TimeDisplay>
                   <Category>Category: {question.category}</Category>
@@ -193,7 +230,7 @@ const Game: React.FC = () => {
             <GameOver> Game Over </GameOver>
             <ScoreBox score={score || 0} />
             <GameOverButtonsWrapper>
-              <Button onClick={() => navigate("/signup")}> Login </Button>
+              <Button onClick={handleLogoutAndNavigate}> Login </Button>
               <Button onClick={() => navigate("/ranking")}> Ranking</Button>
             </GameOverButtonsWrapper>
           </ModalContent>
@@ -253,7 +290,6 @@ const RightPanelTop = styled.div`
   flex-direction: column;
   justify-content: flex-start;
   align-items: space-between;
-  // padding: 1rem;
   gap: 1rem;
 `;
 

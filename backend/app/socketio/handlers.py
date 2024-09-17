@@ -14,6 +14,8 @@ from app.schemas import score as schemas
 from app.db.database import SessionLocal
 from datetime import datetime
 from urllib.parse import quote
+from app.models import score as models, user as user_models
+
 
 SECRET_KEY = "your_secret_key"  # Replace with your actual secret key for JWT
 
@@ -25,7 +27,7 @@ class GameHandler:
         self.user_timers: Dict[str, asyncio.Task] = {}  # Track active timers per user
         self.current_question: Dict[str, str] = {}
         self.question_times: Dict[str, int] = {}  # Track remaining time per user
-        self.first_question_time = 60  # Initial time for the first question
+        self.first_question_time = 30  # Initial time for the first question
         self.time_decrement = 2  # Time decrement for each correct answer
         self.time_update_interval = 1  # Time update interval in seconds
         self.connected_clients: Set[WebSocket] = set()  # Track connected clients
@@ -69,7 +71,7 @@ class GameHandler:
 
     def get_options(self, correct_question: str) -> List[str]:
         options = [correct_question]
-        while len(options) < 3:
+        while len(options) < 4:
             random_question = self.get_random_question()
             if random_question not in options:
                 options.append(random_question)
@@ -170,30 +172,38 @@ class GameHandler:
                 pass
 
     async def save_user_score(self, user_email: str):
-        # Save the user's score to the database and update positions
-        session: Session = SessionLocal()
-        try:
-            new_score = models.Score(
-                user_email=user_email,
-                value=self.user_scores[user_email],
-                timestamp=datetime.now()  # Save the timestamp of the score
-            )
+            # Save the user's score to the database and update positions
+            session: Session = SessionLocal()
+            print(f"SAVING_USER_SCORE: {user_email}")
+            try:
+                # Fetch the user's name using their email
+                user = session.query(user_models.User).filter(user_models.User.email == user_email).first()
+                user_name = user.full_name if user else "Unknown"  # Fallback to "Unknown" if user is not found
 
-            session.add(new_score)
-            session.commit()
-            session.refresh(new_score)
+                # Save the score with the user's full name
+                new_score = models.Score(
+                    name = user_name,
+                    email=user_email,
+                    value=self.user_scores[user_email],
+                    timestamp=datetime.now(),  # Save the timestamp of the score
+                )
 
-            # Update positions
-            scores = session.query(models.Score).order_by(models.Score.value.desc()).all()
-            for i, score in enumerate(scores):
-                score.position = i + 1
+                session.add(new_score)
                 session.commit()
+                session.refresh(new_score)
 
-            # Notify all connected clients with updated rankings
-            await self.notify_ranking_update()
+                # Update positions
+                scores = session.query(models.Score).order_by(models.Score.value.desc()).all()
+                for i, score in enumerate(scores):
+                    score.position = i + 1
+                    session.commit()
 
-        finally:
-            session.close()
+                # Notify all connected clients with updated rankings
+                await self.notify_ranking_update()
+
+            finally:
+                session.close()
+
 
     async def notify_ranking_update(self):
         print(f"🐶 Notifing Ranking...")
@@ -202,7 +212,8 @@ class GameHandler:
         try:
             scores = session.query(models.Score).order_by(models.Score.value.desc()).all()
             ranking_data = [{
-                "user_email": score.user_email,
+                "name": score.name,
+                "email": score.email,
                 "score": score.value,
                 "position": score.position,
                 "timestamp": score.timestamp.strftime("%Y-%m-%d %H:%M:%S")  # Include the timestamp
