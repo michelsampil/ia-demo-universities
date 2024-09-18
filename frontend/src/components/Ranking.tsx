@@ -223,10 +223,16 @@ const StyledTable = styled.table`
     background-color: ${colors.tourqueeseMid};
   }
 
+  tr {
+    transition: background-color 0.3s ease, box-shadow 0.3s ease,
+      transform 0.3s ease;
+  }
+
   tr:hover {
-    background-color: ${colors.tourqueeseBright};
-    border: 2px solid ${colors.lightTurquoise};
-    box-shadow: 0 0 8px ${colors.lightTurquoise};
+    background-color: ${colors.neonTurquoise}; /* Bright turquoise for hover effect */
+    box-shadow: 0 0 12px ${colors.neonTurquoise},
+      0 0 20px rgba(0, 255, 255, 0.4); /* Added glow effect */
+    transform: scale(1.02); /* Slightly scale up for emphasis */
   }
 `;
 
