@@ -7,7 +7,8 @@ import plateMedal from "../assets/images/plate-medal.png";
 import bronceMedal from "../assets/images/bronce-medal.png";
 
 interface Score {
-  username: string;
+  name: string;
+  email: string;
   score: number;
   position?: number; // Made position optional to handle undefined cases
 }
@@ -75,9 +76,7 @@ const Podium: React.FC<PodiumProps> = ({ topThree }) => {
                 }`}
               />
             </Medal>
-            {user?.username && (
-              <Username>{trimUsername(user.username, 10)}</Username>
-            )}
+            {user?.name && <Username>{trimUsername(user.name, 10)}</Username>}
             <Score>{user?.score} pts</Score>
           </PodiumPlace>
         ))}

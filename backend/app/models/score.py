@@ -5,7 +5,8 @@ class Score(Base):
     __tablename__ = "scores"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_email = Column(String, index=True)
+    email = Column(String, index=True)
+    name = Column(String, index=True)
     value = Column(Integer)
     position = Column(Integer, index=True)
     timestamp = Column(DateTime, index=True)

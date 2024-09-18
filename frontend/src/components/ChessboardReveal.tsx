@@ -29,7 +29,7 @@ const Square = styled.div<{
   background-size: ${(props) => props.cols * 100}%
     ${(props) => props.rows * 100}%;
   background-position: ${(props) => props.bgPosition};
-  filter: blur(10px);
+  filter: blur(50px);
   transition: filter 0.5s ease;
 `;
 

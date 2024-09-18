@@ -56,7 +56,9 @@ const Login: React.FC = () => {
       navigate("/");
     } catch (error) {
       console.error("Login failed", error);
-      setErrorMessage("Login failed. Please check your email and try again.");
+      setErrorMessage(
+        "Login failed. Please check your email is registered and try again."
+      );
     }
   };
 

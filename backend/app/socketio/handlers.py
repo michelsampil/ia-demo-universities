@@ -14,6 +14,8 @@ from app.schemas import score as schemas
 from app.db.database import SessionLocal
 from datetime import datetime
 from urllib.parse import quote
+from app.models import score as models, user as user_models
+
 
 SECRET_KEY = "your_secret_key"  # Replace with your actual secret key for JWT
 
@@ -25,19 +27,18 @@ class GameHandler:
         self.user_timers: Dict[str, asyncio.Task] = {}  # Track active timers per user
         self.current_question: Dict[str, str] = {}
         self.question_times: Dict[str, int] = {}  # Track remaining time per user
-        self.first_question_time = 60  # Initial time for the first question
+        self.first_question_time = 25  # Initial time for the first question
         self.time_decrement = 2  # Time decrement for each correct answer
+        self.min_question_time = 10  # Minimum time for any question
         self.time_update_interval = 1  # Time update interval in seconds
         self.connected_clients: Set[WebSocket] = set()  # Track connected clients
 
     def scan_images_folder(self) -> Dict[str, List[str]]:
         questions = {}
         valid_extensions = {".png", ".jpg", ".jpeg", ".gif"}  # Add any other valid image extensions
-
         if not os.path.exists(self.images_folder):
             print(f"Images folder '{self.images_folder}' does not exist.")
             return questions
-
         print(f"Scanning images folder: {self.images_folder}")
         for category in os.listdir(self.images_folder):
             category_path = os.path.join(self.images_folder, category)
@@ -56,7 +57,7 @@ class GameHandler:
                             questions[question_key] = image_files
                             print(f"Category: {category}, Subfolder: {subfolder}, Images found: {len(image_files)}")
         return questions
-    
+
     def get_random_question(self) -> str:
         if not self.questions:
             raise ValueError("No questions available.")
@@ -69,7 +70,7 @@ class GameHandler:
 
     def get_options(self, correct_question: str) -> List[str]:
         options = [correct_question]
-        while len(options) < 3:
+        while len(options) < 4:
             random_question = self.get_random_question()
             if random_question not in options:
                 options.append(random_question)
@@ -99,7 +100,11 @@ class GameHandler:
             # Proceed with sending the question
             question = self.get_random_question()
             self.current_question[user_email] = question
-            self.question_times[user_email] = self.first_question_time  # Initialize timer for user
+
+            # Set the starting time for the user, or initialize it if this is the first question
+            if user_email not in self.question_times:
+                self.question_times[user_email] = self.first_question_time
+
             image_path = self.get_random_image_path(question)
             encoded_path = quote(image_path)
 
@@ -124,7 +129,6 @@ class GameHandler:
             except WebSocketDisconnect:
                 pass
 
-
     async def handle_answer(self, websocket: WebSocket, user_email: str, answer: str):
         correct_question = self.current_question.get(user_email)
         print(f"🍌 correct_question: {correct_question}, answer: {answer}")
@@ -132,25 +136,35 @@ class GameHandler:
         if user_email not in self.user_scores:
             self.user_scores[user_email] = 0  # Initialize score if it doesn't exist
 
-        
         if answer == correct_question:
-            self.user_scores[user_email] = self.user_scores.get(user_email, 0) + 1
-            self.first_question_time = max(10, self.first_question_time - self.time_decrement)
-            print(f"🧙‍♂️ self.user_scores: {self.user_scores}")
-            print(f"🥶 self.question_times: {self.question_times}")
+            # Update the score
+            self.user_scores[user_email] += 1
+
+            # Decrease the starting time for the next question (not the remaining time)
+            current_time = self.question_times[user_email]
+            next_time = max(10, self.first_question_time - (self.time_decrement * self.user_scores[user_email]))  # Ensure the time doesn't go below 10
+            self.question_times[user_email] = next_time  # Store the new starting time for the next question
+            
+            print(f"🧙‍♂️ Updated score: {self.user_scores}")
+            print(f"🥶 Time for next question for user {user_email}: {next_time}")
 
             try:
+                # Notify the user of the correct answer
                 await websocket.send_json({
                     "event": "answer_result",
                     "correct": True,
                     "score": self.user_scores[user_email]
                 })
-                await self.send_question(websocket, user_email)  # Send new question only if the answer is correct
+                
+                # Send the new question with the updated starting time
+                await self.send_question(websocket, user_email)
             except WebSocketDisconnect:
                 pass
         else:
+            # If the answer is incorrect, the game ends for the user
             await self.save_user_score(user_email)
             try:
+                # Notify user of the incorrect answer and the game over event
                 await websocket.send_json({
                     "event": "answer_result",
                     "correct": False,
@@ -161,39 +175,76 @@ class GameHandler:
                     "score": self.user_scores[user_email]
                 })
 
-                print(f"before removing user... {user_email}")
-                print(f"current_question.. {self.current_question}")
-                print(f"question_times... {self.question_times}")
-
+                # Clean up game data for the user
                 self.clean_up_game(user_email)
             except WebSocketDisconnect:
                 pass
+            
+    async def update_time(self, websocket: WebSocket, user_email: str):
+        while user_email in self.question_times and self.question_times[user_email] > 0:
+            await asyncio.sleep(self.time_update_interval)
+            if user_email in self.question_times:
+                self.question_times[user_email] -= self.time_update_interval
+                try:
+                    await websocket.send_json({
+                        "event": "time",
+                        "time": self.question_times[user_email]
+                    })
+                except WebSocketDisconnect:
+                    break
+
+        if user_email in self.question_times and self.question_times[user_email] <= 0:
+            try:
+                await websocket.send_json({"event": "time_up"})
+                await self.handle_answer(websocket, user_email, "")
+            except WebSocketDisconnect:
+                pass
+
+    def clean_up_game(self, user_email: str):
+        self.cancel_user_timer(user_email)
+        self.current_question.pop(user_email, None)
+        self.question_times.pop(user_email, None)
+        self.user_scores.pop(user_email, None)
+
+    def cancel_user_timer(self, user_email: str):
+        if user_email in self.user_timers:
+            self.user_timers[user_email].cancel()
+            del self.user_timers[user_email]
+
 
     async def save_user_score(self, user_email: str):
-        # Save the user's score to the database and update positions
-        session: Session = SessionLocal()
-        try:
-            new_score = models.Score(
-                user_email=user_email,
-                value=self.user_scores[user_email],
-                timestamp=datetime.now()  # Save the timestamp of the score
-            )
+            # Save the user's score to the database and update positions
+            session: Session = SessionLocal()
+            print(f"SAVING_USER_SCORE: {user_email}")
+            try:
+                # Fetch the user's name using their email
+                user = session.query(user_models.User).filter(user_models.User.email == user_email).first()
+                user_name = user.full_name if user else "Unknown"  # Fallback to "Unknown" if user is not found
 
-            session.add(new_score)
-            session.commit()
-            session.refresh(new_score)
+                # Save the score with the user's full name
+                new_score = models.Score(
+                    name = user_name,
+                    email=user_email,
+                    value=self.user_scores[user_email],
+                    timestamp=datetime.now(),  # Save the timestamp of the score
+                )
 
-            # Update positions
-            scores = session.query(models.Score).order_by(models.Score.value.desc()).all()
-            for i, score in enumerate(scores):
-                score.position = i + 1
+                session.add(new_score)
                 session.commit()
+                session.refresh(new_score)
 
-            # Notify all connected clients with updated rankings
-            await self.notify_ranking_update()
+                # Update positions
+                scores = session.query(models.Score).order_by(models.Score.value.desc()).all()
+                for i, score in enumerate(scores):
+                    score.position = i + 1
+                    session.commit()
 
-        finally:
-            session.close()
+                # Notify all connected clients with updated rankings
+                await self.notify_ranking_update()
+
+            finally:
+                session.close()
+
 
     async def notify_ranking_update(self):
         print(f"🐶 Notifing Ranking...")
@@ -202,7 +253,8 @@ class GameHandler:
         try:
             scores = session.query(models.Score).order_by(models.Score.value.desc()).all()
             ranking_data = [{
-                "user_email": score.user_email,
+                "name": score.name,
+                "email": score.email,
                 "score": score.value,
                 "position": score.position,
                 "timestamp": score.timestamp.strftime("%Y-%m-%d %H:%M:%S")  # Include the timestamp
@@ -225,16 +277,16 @@ class GameHandler:
             print("finally...")
             session.close()
 
-    def cancel_user_timer(self, user_email: str):
-            if user_email in self.user_timers:
-                self.user_timers[user_email].cancel()
-                del self.user_timers[user_email]
+    # def cancel_user_timer(self, user_email: str):
+    #         if user_email in self.user_timers:
+    #             self.user_timers[user_email].cancel()
+    #             del self.user_timers[user_email]
 
-    def clean_up_game(self, user_email: str):
-        self.cancel_user_timer(user_email)  # Cancel any running timer
-        self.current_question.pop(user_email, None)  # Remove current question for the user
-        self.question_times.pop(user_email, None)  # Remove timer for the user
-        self.user_scores.pop(user_email, None)  # Remove the score for the user
+    # def clean_up_game(self, user_email: str):
+    #     self.cancel_user_timer(user_email)  # Cancel any running timer
+    #     self.current_question.pop(user_email, None)  # Remove current question for the user
+    #     self.question_times.pop(user_email, None)  # Remove timer for the user
+    #     self.user_scores.pop(user_email, None)  # Remove the score for the user
     
     async def update_time(self, websocket: WebSocket, user_email: str):
         while user_email in self.question_times and self.question_times[user_email] > 0:
