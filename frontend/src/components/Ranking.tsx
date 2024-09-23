@@ -26,7 +26,7 @@ const Ranking: React.FC = () => {
   useEffect(() => {
     const fetchScores = async () => {
       try {
-        const response = await api.get("/scores/scores/top/10");
+        const response = await api.get("/scores/scores/top/1000");
         const userScores: Score[] = filterScores(
           response.data.map((e: any) => ({
             name: e.name,

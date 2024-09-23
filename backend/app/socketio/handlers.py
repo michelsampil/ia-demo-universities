@@ -17,7 +17,7 @@ from urllib.parse import quote
 from app.models import score as models, user as user_models
 
 
-SECRET_KEY = "your_secret_key"  # Replace with your actual secret key for JWT
+SECRET_KEY = "your_secret_key" 
 
 class GameHandler:
     def __init__(self):
@@ -213,41 +213,70 @@ class GameHandler:
 
 
     async def save_user_score(self, user_email: str):
-            # Save the user's score to the database and update positions
-            session: Session = SessionLocal()
-            print(f"SAVING_USER_SCORE: {user_email}")
-            try:
-                # Fetch the user's name using their email
-                user = session.query(user_models.User).filter(user_models.User.email == user_email).first()
-                user_name = user.full_name if user else "Unknown"  # Fallback to "Unknown" if user is not found
+        # Save the user's score to the database and update positions
+        session: Session = SessionLocal()
+        print(f"SAVING_USER_SCORE: {user_email}")
+        
+        try:
+            # Fetch the user's name using their email
+            user = session.query(user_models.User).filter(user_models.User.email == user_email).first()
+            user_name = user.full_name if user else "Unknown"  # Fallback to "Unknown" if user is not found
 
-                # Save the score with the user's full name
-                new_score = models.Score(
-                    name = user_name,
-                    email=user_email,
-                    value=self.user_scores[user_email],
-                    timestamp=datetime.now(),  # Save the timestamp of the score
-                )
+            # Save the score with the user's full name
+            new_score = models.Score(
+                name=user_name,
+                email=user_email,
+                value=self.user_scores[user_email],
+                timestamp=datetime.now(),  # Save the timestamp of the score
+            )
 
-                session.add(new_score)
+            session.add(new_score)
+            session.commit()
+            session.refresh(new_score)
+
+            # Update positions
+            scores = session.query(models.Score).order_by(models.Score.value.desc()).all()
+            for i, score in enumerate(scores):
+                score.position = i + 1
                 session.commit()
-                session.refresh(new_score)
 
-                # Update positions
-                scores = session.query(models.Score).order_by(models.Score.value.desc()).all()
-                for i, score in enumerate(scores):
-                    score.position = i + 1
-                    session.commit()
+            # Notify all connected clients with updated rankings
+            await self.notify_ranking_update()
 
-                # Notify all connected clients with updated rankings
-                await self.notify_ranking_update()
+            # Save scores to backup file
+            await self.save_scores_to_backup(scores)
 
-            finally:
-                session.close()
+        finally:
+            session.close()
 
+    async def save_scores_to_backup(self, scores):
+        # Define the backup file path
+        backup_dir = os.path.join(os.path.dirname(__file__), "../../backups")
+        backup_file = os.path.join(backup_dir, "score_backup.json")
+
+        # Create the backups directory if it doesn't exist
+        if not os.path.exists(backup_dir):
+            os.makedirs(backup_dir)
+
+        # Convert scores to a list of dictionaries
+        scores_data = [
+            {
+                "name": score.name,
+                "email": score.email,
+                "value": score.value,
+                "position": score.position,
+                "timestamp": score.timestamp.isoformat()
+            }
+            for score in scores
+        ]
+
+        # Write the scores to the backup file
+        with open(backup_file, 'w') as f:
+            json.dump(scores_data, f, indent=4)
+
+        print(f"Scores saved to {backup_file}")
 
     async def notify_ranking_update(self):
-        print(f"🐶 Notifing Ranking...")
         # Fetch updated rankings from the database
         session: Session = SessionLocal()
         try:
@@ -277,17 +306,7 @@ class GameHandler:
             print("finally...")
             session.close()
 
-    # def cancel_user_timer(self, user_email: str):
-    #         if user_email in self.user_timers:
-    #             self.user_timers[user_email].cancel()
-    #             del self.user_timers[user_email]
 
-    # def clean_up_game(self, user_email: str):
-    #     self.cancel_user_timer(user_email)  # Cancel any running timer
-    #     self.current_question.pop(user_email, None)  # Remove current question for the user
-    #     self.question_times.pop(user_email, None)  # Remove timer for the user
-    #     self.user_scores.pop(user_email, None)  # Remove the score for the user
-    
     async def update_time(self, websocket: WebSocket, user_email: str):
         while user_email in self.question_times and self.question_times[user_email] > 0:
             await asyncio.sleep(self.time_update_interval)
@@ -348,7 +367,7 @@ class GameHandler:
         event = data.get("event")
 
         print(f"🦋 user_email: {user_email}")
-        print(f"🐑 antes del if envent: {event}")
+        print(f"🐑 antes del if event: {event}")
         if event == "start_game":
             await self.send_question(websocket, user_email)
         elif event == "answer":

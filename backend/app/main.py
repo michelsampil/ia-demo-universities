@@ -6,10 +6,15 @@ from app.db.database import engine, Base
 from app.api.api_v1.endpoints import auth, score, question
 from app.socketio.handlers import handle_connect, handle_disconnect, handle_message
 from fastapi.staticfiles import StaticFiles
+from app.helpers.load_backups import load_scores_from_backup
 
 # Drop and recreate tables
-Base.metadata.drop_all(bind=engine)
+# Enable drop for developer mode only
+# Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
+
+# Load scores backup from backup
+load_scores_from_backup("./backups/score_backup.json")
 
 # Initialize FastAPI app
 app = FastAPI()
