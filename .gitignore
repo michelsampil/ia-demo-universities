@@ -290,3 +290,4 @@ yarn-debug.log*
 yarn-error.log*
 
 user_backup.txt
+score_backup.json

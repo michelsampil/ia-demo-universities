@@ -27,6 +27,9 @@ volumes:
   user-backups:
     driver: local
 
+  score-backups:
+    driver: local
+
 networks:
   app-network:
     driver: bridge
