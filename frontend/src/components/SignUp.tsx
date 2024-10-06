@@ -20,7 +20,7 @@ const SignUp: React.FC = () => {
   const [degreeType, setDegreeType] = useState<string>("");
   const [degreeProgram, setDegreeProgram] = useState<string>("");
   const [customDegreeProgram, setCustomDegreeProgram] = useState<string>("");
-  const [academicYear, setAcademicYear] = useState<number | "">("");
+  const [academicYear, setAcademicYear] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { login } = useContext(AuthContext)!;
@@ -178,15 +178,24 @@ const SignUp: React.FC = () => {
             required
           />
         )}
-        <Input
-          type="number"
-          min="1"
-          max="5"
-          value={academicYear}
-          onChange={(e) => setAcademicYear(Number(e.target.value))}
-          placeholder="Current Academic Year"
-          required
-        />
+        <SelectWrapper>
+          <Select
+            value={academicYear}
+            onChange={(e) => setAcademicYear(e.target.value)}
+            required
+          >
+            <option value="" disabled>
+              Select Academic Year
+            </option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="Graduated">Graduated</option>
+          </Select>
+        </SelectWrapper>
+
         <Button type="submit">Sign up</Button>
         <Footer>
           <span>Already played?</span>

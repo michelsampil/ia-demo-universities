@@ -10,7 +10,7 @@ from app.helpers.load_backups import load_scores_from_backup
 
 # Drop and recreate tables
 # Enable drop for developer mode only
-# Base.metadata.drop_all(bind=engine)
+Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
 
 # Load scores backup from backup
