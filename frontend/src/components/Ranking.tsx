@@ -16,6 +16,7 @@ interface Score {
   score: number;
   timestamp: string;
   position: number;
+  elapsed_time: string; // New field for elapsed time
 }
 
 const Ranking: React.FC = () => {
@@ -34,6 +35,7 @@ const Ranking: React.FC = () => {
             score: e.value,
             timestamp: e.timestamp,
             position: e.position,
+            elapsed_time: e.elapsed_time, // Fetch elapsed time from the backend
           }))
         );
         setScores(userScores);
@@ -56,6 +58,7 @@ const Ranking: React.FC = () => {
             score: e.score,
             timestamp: e.timestamp,
             position: e.position,
+            elapsed_time: e.elapsed_time, // Fetch elapsed time from WebSocket
           }))
         );
         setScores(updatedScores);
@@ -99,6 +102,7 @@ const Ranking: React.FC = () => {
       position: index + 1,
     }));
   };
+
   return (
     <Container>
       <Confetti
@@ -121,6 +125,7 @@ const Ranking: React.FC = () => {
               <th>Name</th>
               <th>Email</th>
               <th>Score</th>
+              <th>Played Time</th> {/* New column for elapsed time */}
               <th>Date</th>
             </tr>
           </thead>
@@ -148,6 +153,7 @@ const Ranking: React.FC = () => {
                   <td>{score.name}</td>
                   <td>{score.email}</td>
                   <ScoreValue>{score.score}</ScoreValue>
+                  <td>{score.elapsed_time}</td> {/* Display elapsed time */}
                   <td>
                     {new Date(score.timestamp).toLocaleTimeString([], {
                       hour: "2-digit",
