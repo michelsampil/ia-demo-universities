@@ -90,12 +90,12 @@ class GameHandler:
             raise ValueError("Token has expired")
         except jwt.InvalidTokenError:
             raise ValueError("Invalid token")
-
+        
     async def send_question(self, websocket: WebSocket, user_email: str):
         try:
-            # Record start time if it's the user's first question
+            # Record start time only when sending the first question
             if user_email not in self.user_start_times:
-                self.user_start_times[user_email] = datetime.now()
+                self.user_start_times[user_email] = datetime.now()  # Start time only set when first question is sent
 
             # Cancel any existing timer before starting a new question
             self.cancel_user_timer(user_email)
@@ -134,6 +134,7 @@ class GameHandler:
                 await websocket.send_json({"event": "error", "message": str(e)})
             except WebSocketDisconnect:
                 pass
+                
     async def handle_answer(self, websocket: WebSocket, user_email: str, answer: str):
         correct_question = self.current_question.get(user_email)
         print(f"🍌 correct_question: {correct_question}, answer: {answer}")
@@ -141,16 +142,12 @@ class GameHandler:
         if user_email not in self.user_scores:
             self.user_scores[user_email] = 0  # Initialize score if it doesn't exist
 
-        # Capture the start time for this question if it's the user's first attempt
-        if user_email not in self.user_start_times:
-            self.user_start_times[user_email] = datetime.now()  # Register the start time for the first question
-
         if answer == correct_question:
             # Update the score
             self.user_scores[user_email] += 1
 
             # Calculate and log elapsed time for the current question
-            start_time = self.user_start_times.get(user_email)
+            start_time = self.user_start_times.get(user_email)  # Do not reset start time here
             if start_time:
                 end_time = datetime.now()
                 elapsed_time = end_time - start_time
@@ -174,9 +171,6 @@ class GameHandler:
                     "score": self.user_scores[user_email],
                     "elapsed_time": elapsed_time_str  # Send the elapsed time to the frontend
                 })
-
-                # Reset the start time for the next question
-                self.user_start_times[user_email] = datetime.now()  # Start the timer for the next question
 
                 # Send the new question with the updated starting time
                 await self.send_question(websocket, user_email)
@@ -212,8 +206,7 @@ class GameHandler:
                 self.clean_up_game(user_email)
             except WebSocketDisconnect:
                 pass
-
-            
+     
     async def update_time(self, websocket: WebSocket, user_email: str):
         while user_email in self.question_times and self.question_times[user_email] > 0:
             await asyncio.sleep(self.time_update_interval)
@@ -257,15 +250,22 @@ class GameHandler:
                 email=user_email,
                 value=self.user_scores[user_email],
                 timestamp=datetime.now(),
-                elapsed_time=elapsed_time  # Store the elapsed time
+                elapsed_time=elapsed_time  
             )
 
             session.add(new_score)
             session.commit()
             session.refresh(new_score)
 
+            # Fetch all scores from the database to create a backup
+            scores = session.query(models.Score).all()
+
             # Update ranking and notify clients
             await self.notify_ranking_update()
+
+            # Save all scores to the backup file
+            await self.save_scores_to_backup(scores)  # Add this line to backup scores after the game ends
+
 
         finally:
             session.close()
@@ -280,14 +280,16 @@ class GameHandler:
         if not os.path.exists(backup_dir):
             os.makedirs(backup_dir)
 
-        # Convert scores to a list of dictionaries
+        # Convert scores to a list of dictionaries with elapsed time
+        current_time = datetime.utcnow()
         scores_data = [
             {
                 "name": score.name,
                 "email": score.email,
                 "value": score.value,
                 "position": score.position,
-                "timestamp": score.timestamp.isoformat()
+                "timestamp": score.timestamp.isoformat(),
+                "elapsed_time": (current_time - score.timestamp).total_seconds()  # Elapsed time in seconds
             }
             for score in scores
         ]
@@ -298,17 +300,22 @@ class GameHandler:
 
         print(f"Scores saved to {backup_file}")
 
+
     async def notify_ranking_update(self):
         # Fetch updated rankings from the database
         session: Session = SessionLocal()
         try:
             scores = session.query(models.Score).order_by(models.Score.value.desc()).all()
+            current_time = datetime.utcnow()
+            
+            # Prepare ranking data with elapsed time
             ranking_data = [{
                 "name": score.name,
                 "email": score.email,
                 "score": score.value,
                 "position": score.position,
-                "timestamp": score.timestamp.strftime("%Y-%m-%d %H:%M:%S")  # Include the timestamp
+                "timestamp": score.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                "elapsed_time": (current_time - score.timestamp).total_seconds()  # Elapsed time in seconds
             } for score in scores]
 
             print(f"ranking_data: {ranking_data}")
@@ -327,7 +334,6 @@ class GameHandler:
         finally:
             print("finally...")
             session.close()
-
 
     async def update_time(self, websocket: WebSocket, user_email: str):
         while user_email in self.question_times and self.question_times[user_email] > 0:
