@@ -3,6 +3,8 @@
 /backend/app/assets/images/idioms/*
 /backend/app/assets/images/movies/*
 /backend/app/assets/images/songs/*
+/backend/app/assets/images/tv series/*
+
 
 # Logs
 logs
