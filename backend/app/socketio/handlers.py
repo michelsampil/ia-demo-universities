@@ -100,9 +100,6 @@ class GameHandler:
             # Cancel any existing timer before starting a new question
             self.cancel_user_timer(user_email)
 
-            # Send current ranking to all connected clients before starting the game
-            await self.notify_ranking_update()
-
             # Proceed with sending the question
             question = self.get_random_question()
             self.current_question[user_email] = question
@@ -261,16 +258,16 @@ class GameHandler:
             scores = session.query(models.Score).all()
 
             # Update ranking and notify clients
-            await self.notify_ranking_update()
+            await self.notify_ranking_update(scores)
 
             # Save all scores to the backup file
-            await self.save_scores_to_backup(scores)  # Add this line to backup scores after the game ends
+            await self.save_scores_to_backup(scores) 
 
 
         finally:
             session.close()
 
-
+        
     async def save_scores_to_backup(self, scores):
         # Define the backup file path
         backup_dir = os.path.join(os.path.dirname(__file__), "../../backups")
@@ -280,8 +277,7 @@ class GameHandler:
         if not os.path.exists(backup_dir):
             os.makedirs(backup_dir)
 
-        # Convert scores to a list of dictionaries with elapsed time
-        current_time = datetime.utcnow()
+        # Convert scores to a list of dictionaries, assuming elapsed_time is already in the score object
         scores_data = [
             {
                 "name": score.name,
@@ -289,7 +285,7 @@ class GameHandler:
                 "value": score.value,
                 "position": score.position,
                 "timestamp": score.timestamp.isoformat(),
-                "elapsed_time": (current_time - score.timestamp).total_seconds()  # Elapsed time in seconds
+                "elapsed_time": score.elapsed_time  # Use the provided elapsed time directly
             }
             for score in scores
         ]
@@ -299,29 +295,22 @@ class GameHandler:
             json.dump(scores_data, f, indent=4)
 
         print(f"Scores saved to {backup_file}")
-
-
-    async def notify_ranking_update(self):
+        
+    async def notify_ranking_update(self,scores):
         # Fetch updated rankings from the database
         session: Session = SessionLocal()
+
+        ranking_data = [{
+            "name": score.name,
+            "email": score.email,
+            "score": score.value,
+            "position": score.position,
+            "timestamp": score.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+            "elapsed_time": score.elapsed_time  # Already included in scores
+        } for score in scores]
+
+
         try:
-            scores = session.query(models.Score).order_by(models.Score.value.desc()).all()
-            current_time = datetime.utcnow()
-            
-            # Prepare ranking data with elapsed time
-            ranking_data = [{
-                "name": score.name,
-                "email": score.email,
-                "score": score.value,
-                "position": score.position,
-                "timestamp": score.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
-                "elapsed_time": (current_time - score.timestamp).total_seconds()  # Elapsed time in seconds
-            } for score in scores]
-
-            print(f"ranking_data: {ranking_data}")
-
-            # Broadcast updated ranking to all connected clients
-            print(f"🦁 Connected Clients: {self.connected_clients}")
             
             for websocket in self.connected_clients:
                 try:
