@@ -8,6 +8,7 @@ class ScoreBase(BaseModel):
     value: int
     position: Optional[int] = None
     timestamp: datetime
+    elapsed_time: str
 
 class ScoreCreate(ScoreBase):
     pass

@@ -4,7 +4,7 @@ class UserCreate(BaseModel):
     full_name: str
     email: str
     degree_program: str
-    academic_year: int
+    academic_year: str
 
 class UserLogin(BaseModel):
     email: str

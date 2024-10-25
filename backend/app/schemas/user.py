@@ -6,7 +6,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     degree_program: str
-    academic_year: int
+    academic_year: str
     # Removed password field as it's no longer needed
 
 class UserOut(UserBase):

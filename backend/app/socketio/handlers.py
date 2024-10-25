@@ -32,6 +32,8 @@ class GameHandler:
         self.min_question_time = 10  # Minimum time for any question
         self.time_update_interval = 1  # Time update interval in seconds
         self.connected_clients: Set[WebSocket] = set()  # Track connected clients
+        self.user_start_times: Dict[str, datetime] = {}  # Track start time for each user
+
 
     def scan_images_folder(self) -> Dict[str, List[str]]:
         questions = {}
@@ -88,14 +90,15 @@ class GameHandler:
             raise ValueError("Token has expired")
         except jwt.InvalidTokenError:
             raise ValueError("Invalid token")
-
+        
     async def send_question(self, websocket: WebSocket, user_email: str):
         try:
+            # Record start time only when sending the first question
+            if user_email not in self.user_start_times:
+                self.user_start_times[user_email] = datetime.now()  # Start time only set when first question is sent
+
             # Cancel any existing timer before starting a new question
             self.cancel_user_timer(user_email)
-
-            # Send current ranking to all connected clients before starting the game
-            await self.notify_ranking_update()
 
             # Proceed with sending the question
             question = self.get_random_question()
@@ -128,11 +131,11 @@ class GameHandler:
                 await websocket.send_json({"event": "error", "message": str(e)})
             except WebSocketDisconnect:
                 pass
-
+                
     async def handle_answer(self, websocket: WebSocket, user_email: str, answer: str):
         correct_question = self.current_question.get(user_email)
         print(f"🍌 correct_question: {correct_question}, answer: {answer}")
-        
+
         if user_email not in self.user_scores:
             self.user_scores[user_email] = 0  # Initialize score if it doesn't exist
 
@@ -140,11 +143,20 @@ class GameHandler:
             # Update the score
             self.user_scores[user_email] += 1
 
+            # Calculate and log elapsed time for the current question
+            start_time = self.user_start_times.get(user_email)  # Do not reset start time here
+            if start_time:
+                end_time = datetime.now()
+                elapsed_time = end_time - start_time
+                minutes, seconds = divmod(elapsed_time.total_seconds(), 60)
+                elapsed_time_str = f"{int(minutes)}:{int(seconds)}"
+                print(f"⏱ Elapsed time for user {user_email}: {elapsed_time_str}")
+
             # Decrease the starting time for the next question (not the remaining time)
             current_time = self.question_times[user_email]
             next_time = max(10, self.first_question_time - (self.time_decrement * self.user_scores[user_email]))  # Ensure the time doesn't go below 10
             self.question_times[user_email] = next_time  # Store the new starting time for the next question
-            
+
             print(f"🧙‍♂️ Updated score: {self.user_scores}")
             print(f"🥶 Time for next question for user {user_email}: {next_time}")
 
@@ -153,16 +165,27 @@ class GameHandler:
                 await websocket.send_json({
                     "event": "answer_result",
                     "correct": True,
-                    "score": self.user_scores[user_email]
+                    "score": self.user_scores[user_email],
+                    "elapsed_time": elapsed_time_str  # Send the elapsed time to the frontend
                 })
-                
+
                 # Send the new question with the updated starting time
                 await self.send_question(websocket, user_email)
             except WebSocketDisconnect:
                 pass
         else:
+            # Calculate and log the final elapsed time
+            start_time = self.user_start_times.get(user_email)
+            if start_time:
+                end_time = datetime.now()
+                elapsed_time = end_time - start_time
+                minutes, seconds = divmod(elapsed_time.total_seconds(), 60)
+                elapsed_time_str = f"{int(minutes)}:{int(seconds)}"
+                print(f"🚨 Final elapsed time for user {user_email}: {elapsed_time_str}")
+
             # If the answer is incorrect, the game ends for the user
-            await self.save_user_score(user_email)
+            await self.save_user_score(user_email, elapsed_time_str)  # Pass the elapsed time to save_user_score
+
             try:
                 # Notify user of the incorrect answer and the game over event
                 await websocket.send_json({
@@ -172,14 +195,15 @@ class GameHandler:
                 })
                 await websocket.send_json({
                     "event": "game_over",
-                    "score": self.user_scores[user_email]
+                    "score": self.user_scores[user_email],
+                    "elapsed_time": elapsed_time_str  # Send the final elapsed time to the frontend
                 })
 
                 # Clean up game data for the user
                 self.clean_up_game(user_email)
             except WebSocketDisconnect:
                 pass
-            
+     
     async def update_time(self, websocket: WebSocket, user_email: str):
         while user_email in self.question_times and self.question_times[user_email] > 0:
             await asyncio.sleep(self.time_update_interval)
@@ -212,43 +236,38 @@ class GameHandler:
             del self.user_timers[user_email]
 
 
-    async def save_user_score(self, user_email: str):
-        # Save the user's score to the database and update positions
+    async def save_user_score(self, user_email: str, elapsed_time: str):
         session: Session = SessionLocal()
-        print(f"SAVING_USER_SCORE: {user_email}")
-        
         try:
-            # Fetch the user's name using their email
             user = session.query(user_models.User).filter(user_models.User.email == user_email).first()
-            user_name = user.full_name if user else "Unknown"  # Fallback to "Unknown" if user is not found
+            user_name = user.full_name if user else "Unknown"
 
-            # Save the score with the user's full name
             new_score = models.Score(
                 name=user_name,
                 email=user_email,
                 value=self.user_scores[user_email],
-                timestamp=datetime.now(),  # Save the timestamp of the score
+                timestamp=datetime.now(),
+                elapsed_time=elapsed_time  
             )
 
             session.add(new_score)
             session.commit()
             session.refresh(new_score)
 
-            # Update positions
-            scores = session.query(models.Score).order_by(models.Score.value.desc()).all()
-            for i, score in enumerate(scores):
-                score.position = i + 1
-                session.commit()
+            # Fetch all scores from the database to create a backup
+            scores = session.query(models.Score).all()
 
-            # Notify all connected clients with updated rankings
-            await self.notify_ranking_update()
+            # Update ranking and notify clients
+            await self.notify_ranking_update(scores)
 
-            # Save scores to backup file
-            await self.save_scores_to_backup(scores)
+            # Save all scores to the backup file
+            await self.save_scores_to_backup(scores) 
+
 
         finally:
             session.close()
 
+        
     async def save_scores_to_backup(self, scores):
         # Define the backup file path
         backup_dir = os.path.join(os.path.dirname(__file__), "../../backups")
@@ -258,14 +277,15 @@ class GameHandler:
         if not os.path.exists(backup_dir):
             os.makedirs(backup_dir)
 
-        # Convert scores to a list of dictionaries
+        # Convert scores to a list of dictionaries, assuming elapsed_time is already in the score object
         scores_data = [
             {
                 "name": score.name,
                 "email": score.email,
                 "value": score.value,
                 "position": score.position,
-                "timestamp": score.timestamp.isoformat()
+                "timestamp": score.timestamp.isoformat(),
+                "elapsed_time": score.elapsed_time  # Use the provided elapsed time directly
             }
             for score in scores
         ]
@@ -275,24 +295,22 @@ class GameHandler:
             json.dump(scores_data, f, indent=4)
 
         print(f"Scores saved to {backup_file}")
-
-    async def notify_ranking_update(self):
+        
+    async def notify_ranking_update(self,scores):
         # Fetch updated rankings from the database
         session: Session = SessionLocal()
+
+        ranking_data = [{
+            "name": score.name,
+            "email": score.email,
+            "score": score.value,
+            "position": score.position,
+            "timestamp": score.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+            "elapsed_time": score.elapsed_time  # Already included in scores
+        } for score in scores]
+
+
         try:
-            scores = session.query(models.Score).order_by(models.Score.value.desc()).all()
-            ranking_data = [{
-                "name": score.name,
-                "email": score.email,
-                "score": score.value,
-                "position": score.position,
-                "timestamp": score.timestamp.strftime("%Y-%m-%d %H:%M:%S")  # Include the timestamp
-            } for score in scores]
-
-            print(f"ranking_data: {ranking_data}")
-
-            # Broadcast updated ranking to all connected clients
-            print(f"🦁 Connected Clients: {self.connected_clients}")
             
             for websocket in self.connected_clients:
                 try:
@@ -305,7 +323,6 @@ class GameHandler:
         finally:
             print("finally...")
             session.close()
-
 
     async def update_time(self, websocket: WebSocket, user_email: str):
         while user_email in self.question_times and self.question_times[user_email] > 0:

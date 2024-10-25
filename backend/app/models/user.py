@@ -8,4 +8,4 @@ class User(Base):
     full_name = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
     degree_program = Column(String, index=True)
-    academic_year = Column(Integer, index=True)
+    academic_year = Column(String, index=True)
