@@ -78,7 +78,6 @@ const Ranking: React.FC = () => {
     localStorage.removeItem("token");
     navigate("/signup");
   };
-
   const filterScores = (scores: Score[]): Score[] => {
     const uniqueScores = scores
       .filter((score) => score.name !== "Unknown") // Remove "Unknown" users
@@ -91,10 +90,18 @@ const Ranking: React.FC = () => {
         return acc;
       }, {});
 
-    // Convert object back to an array and sort by score
-    const sortedScores = Object.values(uniqueScores).sort(
-      (a, b) => b.score - a.score
-    );
+    // Convert object back to an array and sort by score and elapsed_time
+    const sortedScores = Object.values(uniqueScores).sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score; // Sort by score in descending order
+      }
+      // Parse elapsed time as "mm:ss" to compare if scores are the same
+      const [aMinutes, aSeconds] = a.elapsed_time.split(":").map(Number);
+      const [bMinutes, bSeconds] = b.elapsed_time.split(":").map(Number);
+      const aTotalSeconds = aMinutes * 60 + aSeconds;
+      const bTotalSeconds = bMinutes * 60 + bSeconds;
+      return aTotalSeconds - bTotalSeconds; // Sort by elapsed time in ascending order
+    });
 
     // Reassign positions sequentially starting from 1
     return sortedScores.map((score, index) => ({
@@ -114,7 +121,7 @@ const Ranking: React.FC = () => {
       />
 
       <Header>
-        <Title>Ranking</Title>
+        <Title>Ranking </Title>
       </Header>
 
       <RankingContainer>

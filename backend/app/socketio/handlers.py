@@ -171,8 +171,23 @@ class GameHandler:
 
                 # Send the new question with the updated starting time
                 await self.send_question(websocket, user_email)
+
+                # Save the user score in the database and update the ranking
+                await self.save_user_score(user_email, elapsed_time_str)
+
+
+                    
             except WebSocketDisconnect:
                 pass
+
+            # Send the updated ranking to all clients
+            session: Session = SessionLocal()
+            try:
+                scores = session.query(models.Score).all()
+                await self.notify_ranking_update(scores)
+            finally:
+                print("After updating ranking")
+
         else:
             # Calculate and log the final elapsed time
             start_time = self.user_start_times.get(user_email)
@@ -351,6 +366,14 @@ class GameHandler:
         await websocket.accept()
         self.connected_clients.add(websocket)
         print(f"👽 WebSocket connected")
+
+        # Send the updated ranking to all clients
+        session: Session = SessionLocal()
+        try:
+            scores = session.query(models.Score).all()
+            await self.notify_ranking_update(scores)
+        finally:
+            print("After updating ranking")
 
     async def on_disconnect(self, websocket: WebSocket):
         self.connected_clients.discard(websocket)

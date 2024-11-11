@@ -121,9 +121,9 @@ const Game: React.FC = () => {
       }))
     );
 
-    const topThreePlayers = updatedScores.slice(0, 3); // Get top 3 players after reassigning positions
+    const topThreePlayers = updatedScores.slice(0, 3);
 
-    setTopThree(topThreePlayers); // Update top 3 players
+    setTopThree(topThreePlayers);
   };
 
   const handleAnswer = async (answer: string) => {
